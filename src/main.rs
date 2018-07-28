@@ -113,6 +113,10 @@ impl<A, B> Parser<B> for Bind<A, B> {
     }
 }
 
+pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Bind<A, B> {
+    return Bind { f, p };
+}
+
 // -------------------------------------------------------------------------------------------------
 
 #[cfg(test)]
@@ -160,7 +164,7 @@ mod tests_parsec {
         use super::*;
 
         let p = Box::new(returns(1));
-        let r = Bind { f: |a: u32|Box::new(returns(a + 1)), p };
+        let r = bind(|a: u32| Box::new(returns(a + 1)), p);
         assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
