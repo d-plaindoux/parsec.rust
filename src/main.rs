@@ -1,21 +1,27 @@
+use response::*;
+
 fn main() {}
 
 // -------------------------------------------------------------------------------------------------
 // Response definition
 // -------------------------------------------------------------------------------------------------
 
-pub enum Response<A> {
-    Success(A, String, bool),
-    Reject(bool),
-}
+mod response {
+    pub enum Response<A> {
+        Success(A, String, bool),
+        Reject(bool),
+    }
 
-pub fn fold<A, B>(s: Response<A>, success: fn(A, String, bool) -> B, reject: fn(bool) -> B) -> B {
-    match s {
-        Response::Success(a, s, b) => success(a, s, b),
-        Response::Reject(b) => reject(b)
+    type OnSuccess<A, B> = fn(A, String, bool) -> B;
+    type OnReject<B> = fn(bool) -> B;
+
+    pub fn fold<A, B>(s: Response<A>, success: OnSuccess<A, B>, reject: OnReject<B>) -> B {
+        match s {
+            Response::Success(a, s, b) => success(a, s, b),
+            Response::Reject(b) => reject(b)
+        }
     }
 }
-
 
 // -------------------------------------------------------------------------------------------------
 // Parser type definition
@@ -74,7 +80,7 @@ impl<A> Parser<A> for Join<A> {
 }
 
 pub fn join<A>(p: Box<Parser<Box<Parser<A>>>>) -> Join<A> {
-    return Join { p };
+    Join { p }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -91,7 +97,7 @@ impl<A, B> Parser<B> for FMap<A, B> {
 }
 
 pub fn fmap<A, B>(f: fn(A) -> B, p: Box<Parser<A>>) -> FMap<A, B> {
-    return FMap { f, p };
+    FMap { f, p }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -114,17 +120,62 @@ impl<A, B> Parser<B> for Bind<A, B> {
 }
 
 pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Bind<A, B> {
-    return Bind { f, p };
+    Bind { f, p }
+}
+
+// -------------------------------------------------------------------------------------------------
+// Flow
+// -------------------------------------------------------------------------------------------------
+
+pub struct And<A, B> { p1: Box<Parser<A>>, p2: Box<Parser<B>> }
+
+impl<A, B> Parser<(A, B)> for And<A, B> {
+    fn parse(&self, s: String) -> Response<(A, B)> {
+        match self.p1.parse(s) {
+            Response::Reject(b1) => Response::Reject(b1),
+            Response::Success(a1, i1, b1) => {
+                match self.p2.parse(i1.to_string()) {
+                    Response::Success(a2, i2, b2) => Response::Success((a1, a2), i2, b1 || b2),
+                    Response::Reject(b2) => Response::Reject(b1 || b2),
+                }
+            }
+        }
+    }
+}
+
+pub fn and<A, B>(p1: Box<Parser<A>>, p2: Box<Parser<B>>) -> And<A, B> {
+    And { p1, p2 }
+}
+// -------------------------------------------------------------------------------------------------
+
+pub struct Or<A> { p1: Box<Parser<A>>, p2: Box<Parser<A>> }
+
+impl<A> Parser<A> for Or<A> {
+    fn parse(&self, s: String) -> Response<A> {
+        match self.p1.parse(s.clone()) { // Borrowing ...
+            Response::Reject(b1) => {
+                match self.p2.parse(s) {
+                    Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
+                    Response::Reject(b2) => Response::Reject(b1 || b2),
+                }
+            }
+            Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1)
+        }
+    }
+}
+
+pub fn or<A>(p1: Box<Parser<A>>, p2: Box<Parser<A>>) -> Or<A> {
+    Or { p1, p2 }
 }
 
 // -------------------------------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests_parsec {
-    #[test]
-    fn it_returns() {
-        use super::*;
+    use super::*;
 
+    #[test]
+    fn it_parse_with_returns() {
         let r = returns(1);
 
         assert_eq!(1, fold(
@@ -135,9 +186,7 @@ mod tests_parsec {
     }
 
     #[test]
-    fn it_fails() {
-        use super::*;
-
+    fn it_parse_with_fails() {
         let r = fails();
         assert_eq!(0, fold(
             r.parse("a".to_string()),
@@ -147,11 +196,9 @@ mod tests_parsec {
     }
 
     #[test]
-    fn it_fmap() {
-        use super::*;
-
+    fn it_parse_with_fmap_success() {
         let p = Box::new(returns(1));
-        let r = fmap(|a: u32| a.to_string(), p);
+        let r = fmap(|a| a.to_string(), p);
         assert_eq!("1".to_string(), fold(
             r.parse("a".to_string()),
             |a, _, _| a,
@@ -160,15 +207,71 @@ mod tests_parsec {
     }
 
     #[test]
-    fn it_bind() {
-        use super::*;
+    fn it_parse_with_fmap_reject() {
+        let p = Box::new(fails());
+        let r = fmap(|a: u32| a.to_string(), p);
+        assert_eq!("0".to_string(), fold(
+            r.parse("a".to_string()),
+            |a, _, _| a,
+            |_| "0".to_string(),
+        ));
+    }
 
+    #[test]
+    fn it_parse_with_bind_success() {
         let p = Box::new(returns(1));
-        let r = bind(|a: u32| Box::new(returns(a + 1)), p);
+        let r = bind(|a| Box::new(returns(a + 1)), p);
         assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
             |_| 0,
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_bind_reject() {
+        let p = Box::new(returns(1));
+        let r = bind(|_| Box::new(fails()), p);
+        assert_eq!(0, fold(
+            r.parse("a".to_string()),
+            |a, _, _| a,
+            |_| 0,
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_and() {
+        let p1 = Box::new(returns(1));
+        let p2 = Box::new(returns("1"));
+        let r = and(p1,p2);
+        assert_eq!((1,"1"), fold(
+            r.parse("a".to_string()),
+            |a, _, _| a,
+            |_| (0,"0")
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_or_success() {
+        let p1 = Box::new(returns(2));
+        let p2 = Box::new(fails());
+        let r = or(p1,p2);
+        assert_eq!(2, fold(
+            r.parse("a".to_string()),
+            |a, _, _| a,
+            |_| 0
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_or_reject() {
+        let p1 = Box::new(fails());
+        let p2 = Box::new(returns(2));
+        let r = or(p1,p2);
+        assert_eq!(2, fold(
+            r.parse("a".to_string()),
+            |a, _, _| a,
+            |_| 0
         ));
     }
 }
