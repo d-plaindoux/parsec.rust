@@ -115,7 +115,8 @@ impl<A, B> Parser<B> for Bind<A, B> {
 
 // -------------------------------------------------------------------------------------------------
 
-mod tests_parsec_core {
+#[cfg(test)]
+mod tests_parsec {
     #[test]
     fn it_returns() {
         use super::*;
@@ -159,11 +160,11 @@ mod tests_parsec_core {
         use super::*;
 
         let p = Box::new(returns(1));
-        let r = FMap { f: |a: u32| a.to_string(), p };
-        assert_eq!("1".to_string(), fold(
+        let r = Bind { f: |a: u32|Box::new(returns(a + 1)), p };
+        assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
-            |_| "0".to_string(),
+            |_| 0,
         ));
     }
 }
