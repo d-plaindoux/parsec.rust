@@ -68,13 +68,13 @@ pub struct Join<A> { p: Box<Parser<Box<Parser<A>>>> } // How this Box of Box can
 impl<A> Parser<A> for Join<A> {
     fn parse(&self, s: String) -> Response<A> {
         match self.p.parse(s) {
-            Response::Reject(b1) => Response::Reject(b1),
             Response::Success(a1, i1, b1) => {
                 match a1.parse(i1.to_string()) {
                     Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
                 }
-            }
+            },
+            Response::Reject(b1) => Response::Reject(b1)
         }
     }
 }
@@ -132,13 +132,13 @@ pub struct And<A, B> { p1: Box<Parser<A>>, p2: Box<Parser<B>> }
 impl<A, B> Parser<(A, B)> for And<A, B> {
     fn parse(&self, s: String) -> Response<(A, B)> {
         match self.p1.parse(s) {
-            Response::Reject(b1) => Response::Reject(b1),
             Response::Success(a1, i1, b1) => {
                 match self.p2.parse(i1.to_string()) {
                     Response::Success(a2, i2, b2) => Response::Success((a1, a2), i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
                 }
-            }
+            },
+            Response::Reject(b1) => Response::Reject(b1)
         }
     }
 }
@@ -153,13 +153,13 @@ pub struct Or<A> { p1: Box<Parser<A>>, p2: Box<Parser<A>> }
 impl<A> Parser<A> for Or<A> {
     fn parse(&self, s: String) -> Response<A> {
         match self.p1.parse(s.clone()) { // Borrowing ...
+            Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1),
             Response::Reject(b1) => {
                 match self.p2.parse(s) {
                     Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
-                    Response::Reject(b2) => Response::Reject(b1 || b2),
+                    Response::Reject(b2) => Response::Reject(b1 || b2)
                 }
             }
-            Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1)
         }
     }
 }
