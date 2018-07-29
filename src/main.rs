@@ -33,6 +33,24 @@ pub trait Parser<A> {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Reification
+// -------------------------------------------------------------------------------------------------
+
+pub struct Parsec<A> { p: Box<Parser<A>> }
+
+impl<A> Parser<A> for Parsec<A> {
+    fn parse(&self, s: String) -> Response<A> {
+        self.p.parse(s)
+    }
+}
+
+macro_rules! parser {
+    ( $x:expr ) => {
+        Parsec { p : Box::new($x) }
+    };
+}
+
+// -------------------------------------------------------------------------------------------------
 // Core
 // -------------------------------------------------------------------------------------------------
 
@@ -97,6 +115,12 @@ pub fn try<A>(p: Box<Parser<A>>) -> Try<A> {
     Try { p }
 }
 
+macro_rules! do_try {
+    ( $x:expr ) => {
+        Try { p : Box::new($x) }
+    };
+}
+
 // -------------------------------------------------------------------------------------------------
 
 pub struct Lookahead<A> { p: Box<Parser<A>> }
@@ -112,6 +136,12 @@ impl<A> Parser<A> for Lookahead<A> {
 
 pub fn lookahead<A>(p: Box<Parser<A>>) -> Lookahead<A> {
     Lookahead { p }
+}
+
+macro_rules! lookahead {
+    ( $x:expr ) => {
+        Lookahead { p : Box::new($x) }
+    };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -134,8 +164,14 @@ impl<A> Parser<A> for Join<A> {
     }
 }
 
-pub fn join<A>(p: Box<Parser<Box<Parser<A>>>>) -> Join<A> {
+pub fn join<A: 'static>(p: Box<Parser<Box<Parser<A>>>>) -> Join<A> {
     Join { p }
+}
+
+macro_rules! join {
+    ( $x:expr ) => {
+        Join { p : Box::new($x) }
+    };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -155,8 +191,14 @@ pub fn fmap<A, B>(f: fn(A) -> B, p: Box<Parser<A>>) -> FMap<A, B> {
     FMap { f, p }
 }
 
-// -------------------------------------------------------------------------------------------------
+macro_rules! fmap {
+    ( $f:expr , $x:expr ) => {
+        FMap { f: $f, p: Box::new($x) }
+    };
+}
 
+// -------------------------------------------------------------------------------------------------
+/*
 pub struct Bind<A, B> { f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>> } // Can we remove this Box
 
 impl<A, B> Parser<B> for Bind<A, B> {
@@ -176,6 +218,18 @@ impl<A, B> Parser<B> for Bind<A, B> {
 
 pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Bind<A, B> {
     Bind { f, p }
+}
+*/
+
+pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Parsec<B>
+    where A: 'static, B: 'static {
+    parser!(join!(fmap(f, p)))
+}
+
+macro_rules! bind {
+    ( $f:expr , $x:expr ) => {
+        bind($f, Box::new($x))
+    };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -202,6 +256,12 @@ pub fn and<A, B>(p1: Box<Parser<A>>, p2: Box<Parser<B>>) -> And<A, B> {
     And { p1, p2 }
 }
 
+macro_rules! and {
+    ( $p1:expr , $p2:expr ) => {
+        and(Box::new($p1), Box::new($p2))
+    };
+}
+
 // -------------------------------------------------------------------------------------------------
 
 pub struct Or<A> { p1: Box<Parser<A>>, p2: Box<Parser<A>> }
@@ -224,6 +284,12 @@ pub fn or<A>(p1: Box<Parser<A>>, p2: Box<Parser<A>>) -> Or<A> {
     Or { p1, p2 }
 }
 
+macro_rules! or {
+    ( $p1:expr , $p2:expr ) => {
+        or(Box::new($p1), Box::new($p2))
+    };
+}
+
 // -------------------------------------------------------------------------------------------------
 // Occurrences
 // -------------------------------------------------------------------------------------------------
@@ -239,8 +305,14 @@ impl<A> Parser<Option<A>> for Opt<A> {
     }
 }
 
-pub fn opt<A>(p: Box<Parser<A>>) -> Opt<A> {
+pub fn opt<A: 'static>(p: Box<Parser<A>>) -> Opt<A> {
     Opt { p }
+}
+
+macro_rules! opt {
+    ( $p:expr ) => {
+        opt(Box::new($p))
+    };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -279,8 +351,20 @@ pub fn optrep<A>(p: Box<Parser<A>>) -> Repeat<A> {
     Repeat { opt: true, p }
 }
 
+macro_rules! optrep {
+    ( $p:expr ) => {
+        optrep(Box::new($p))
+    };
+}
+
 pub fn rep<A>(p: Box<Parser<A>>) -> Repeat<A> {
     Repeat { opt: false, p }
+}
+
+macro_rules! rep {
+    ( $p:expr ) => {
+        rep(Box::new($p))
+    };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -322,7 +406,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_try_any_reject() {
-        let r = try(Box::new(any()));
+        let r = do_try!(any());
         assert_eq!(false, fold(
             r.parse("".to_string()),
             |_, _, _| panic!("Parse error"),
@@ -332,7 +416,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_try_any_success() {
-        let r = try(Box::new(any()));
+        let r = do_try!(any());
         assert_eq!(true, fold(
             r.parse("a".to_string()),
             |_, _, b| b,
@@ -342,7 +426,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_lookahead_any_reject() {
-        let r = lookahead(Box::new(any()));
+        let r = lookahead!(any());
         assert_eq!(false, fold(
             r.parse("".to_string()),
             |_, _, _| panic!("Parse error"),
@@ -352,7 +436,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_lookahead_any_success() {
-        let r = lookahead(Box::new(any()));
+        let r = lookahead!(any());
         assert_eq!(true, fold(
             r.parse("a".to_string()),
             |_, _, b| b,
@@ -362,8 +446,8 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_fmap_success() {
-        let p = Box::new(returns(1));
-        let r = fmap(|a| a.to_string(), p);
+        let p = returns(1);
+        let r = fmap!(|a:u32| a.to_string(), p);
         assert_eq!("1".to_string(), fold(
             r.parse("a".to_string()),
             |a, _, _| a,
@@ -373,8 +457,8 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_fmap_reject() {
-        let p = Box::new(fails());
-        let r = fmap(|a: u32| a.to_string(), p);
+        let p = fails();
+        let r = fmap!(|a: u32| a.to_string(), p);
         assert_eq!("0".to_string(), fold(
             r.parse("a".to_string()),
             |_, _, _| panic!("Parse error"),
@@ -384,8 +468,8 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_bind_success() {
-        let p = Box::new(returns(1));
-        let r = bind(|a| Box::new(returns(a + 1)), p);
+        let p = returns(1);
+        let r = bind!(|a| Box::new(returns(a + 1)), p);
         assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
@@ -395,8 +479,8 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_bind_reject() {
-        let p = Box::new(returns(1));
-        let r = bind(|_| Box::new(fails()), p);
+        let p = returns(1);
+        let r = bind!(|_| Box::new(fails()), p);
         assert_eq!(0, fold(
             r.parse("a".to_string()),
             |_: u32, _, _| panic!("Parse error"),
@@ -406,9 +490,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_and() {
-        let p1 = Box::new(any());
-        let p2 = Box::new(any());
-        let r = and(p1, p2);
+        let r = and!(any(), any());
         assert_eq!(('a', 'b'), fold(
             r.parse("ab".to_string()),
             |a, _, _| a,
@@ -418,9 +500,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_or_success() {
-        let p1 = Box::new(returns(2));
-        let p2 = Box::new(fails());
-        let r = or(p1, p2);
+        let r = or!(returns(2), fails());
         assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
@@ -430,9 +510,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_or_reject() {
-        let p1 = Box::new(fails());
-        let p2 = Box::new(returns(2));
-        let r = or(p1, p2);
+        let r = or!(fails(), returns(2));
         assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
@@ -441,9 +519,28 @@ mod tests_parsec {
     }
 
     #[test]
+    fn it_parse_with_opt_success() {
+        let r = opt!(any());
+        assert_eq!(Some('a'), fold(
+            r.parse("a".to_string()),
+            |a, _, _| a,
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_opt_success_empty() {
+        let r = opt!(any());
+        assert_eq!(None, fold(
+            r.parse("".to_string()),
+            |a, _, _| a,
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
     fn it_parse_with_optrep_success() {
-        let p1 = Box::new(any());
-        let r = optrep(p1);
+        let r = optrep!(any());
         let s = 1024 * 64;
         assert_eq!(s, fold(
             r.parse("a".repeat(s).to_string()),
@@ -454,8 +551,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_optrep_success_empty() {
-        let p1 = Box::new(any());
-        let r = optrep(p1);
+        let r = optrep!(any());
         assert_eq!(0, fold(
             r.parse("".to_string()),
             |a, _, _| a.len(),
@@ -465,8 +561,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_rep_success() {
-        let p1 = Box::new(any());
-        let r = rep(p1);
+        let r = rep!(any());
         let s = 1024 * 64;
         assert_eq!(s, fold(
             r.parse("a".repeat(s).to_string()),
@@ -477,8 +572,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_rep_reject_empty() {
-        let p1 = Box::new(any());
-        let r = rep(p1);
+        let r = rep!(any());
         assert_eq!(false, fold(
             r.parse("".to_string()),
             |_, _, _| panic!("Parse error"),
