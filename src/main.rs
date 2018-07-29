@@ -123,10 +123,38 @@ pub fn try<A>(p: Box<Parser<A>>) -> Try<A> {
 
 macro_rules! do_try {
     ( $x:expr ) => {
-        Try { p : Box::new($x) }
+        try(Box::new($x))
     };
 }
 
+// -------------------------------------------------------------------------------------------------
+
+pub struct Satisfy<A> { p: Box<Parser<A>>, c: fn(&A) -> bool }
+
+impl<A> Parser<A> for Satisfy<A> {
+    fn parse(&self, s: String) -> Response<A> {
+        match self.p.parse(s) {
+            Response::Success(a, i, b) => {
+                if (self.c)(&a) {
+                    Response::Success(a, i, b)
+                } else {
+                    Response::Reject(b)
+                }
+            }
+            r => r,
+        }
+    }
+}
+
+pub fn satisfy<A>(p: Box<Parser<A>>, c: fn(&A) -> bool) -> Satisfy<A> {
+    Satisfy { p, c }
+}
+
+macro_rules! satisfy {
+    ( $p:expr, $c:expr ) => {
+        satisfy(Box::new($p), $c)
+    };
+}
 // -------------------------------------------------------------------------------------------------
 
 pub struct Lookahead<A> { p: Box<Parser<A>> }
@@ -146,7 +174,7 @@ pub fn lookahead<A>(p: Box<Parser<A>>) -> Lookahead<A> {
 
 macro_rules! lookahead {
     ( $x:expr ) => {
-        Lookahead { p : Box::new($x) }
+        lookahead(Box::new($x))
     };
 }
 
@@ -170,13 +198,13 @@ impl<A> Parser<A> for Join<A> {
     }
 }
 
-pub fn join<A: 'static>(p: Box<Parser<Box<Parser<A>>>>) -> Join<A> {
+pub fn join<A>(p: Box<Parser<Box<Parser<A>>>>) -> Join<A> {
     Join { p }
 }
 
 macro_rules! join {
     ( $x:expr ) => {
-        Join { p : Box::new($x) }
+        join(Box::new($x))
     };
 }
 
@@ -199,17 +227,16 @@ pub fn fmap<A, B>(f: fn(A) -> B, p: Box<Parser<A>>) -> FMap<A, B> {
 
 macro_rules! fmap {
     ( $f:expr , $x:expr ) => {
-        FMap { f: $f, p: Box::new($x) }
+        fmap($f, Box::new($x))
     };
 }
 
 // -------------------------------------------------------------------------------------------------
-/*
+
 pub struct Bind<A, B> { f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>> } // Can we remove this Box
 
 impl<A, B> Parser<B> for Bind<A, B> {
     fn parse(&self, s: String) -> Response<B> {
-        // return join(Box::new(fmap(self.f, self.p))).parse(s); ???
         match self.p.parse(s) {
             Response::Reject(b1) => Response::Reject(b1),
             Response::Success(a1, i1, b1) => {
@@ -225,17 +252,10 @@ impl<A, B> Parser<B> for Bind<A, B> {
 pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Bind<A, B> {
     Bind { f, p }
 }
-*/
-
-pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Parsec<B>
-    where A: 'static,
-          B: 'static {
-    parser!(join!(fmap(f, p)))
-}
 
 macro_rules! bind {
-    ( $f:expr , $x:expr ) => {
-        bind($f, Box::new($x))
+    ( $f:expr , $p:expr ) => {
+        bind($f, Box::new($p))
     };
 }
 
@@ -301,24 +321,9 @@ macro_rules! or {
 // Occurrences
 // -------------------------------------------------------------------------------------------------
 
-pub struct Opt<A> { p: Box<Parser<A>> }
-
-impl<A> Parser<Option<A>> for Opt<A> {
-    fn parse(&self, s: String) -> Response<Option<A>> {
-        match self.p.parse(s.clone()) { // Borrowing ...
-            Response::Success(a1, i1, b1) => Response::Success(Some(a1), i1, b1),
-            _ => Response::Success(None, s, false)
-        }
-    }
-}
-
-pub fn opt<A: 'static>(p: Box<Parser<A>>) -> Opt<A> {
-    Opt { p }
-}
-
 macro_rules! opt {
     ( $p:expr ) => {
-        opt(Box::new($p))
+        or!(fmap!(|a| Some(a), $p), returns(None))
     };
 }
 
@@ -375,6 +380,9 @@ macro_rules! rep {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Char/String
+// -------------------------------------------------------------------------------------------------
+
 
 #[cfg(test)]
 mod tests_parsec {
@@ -423,6 +431,26 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_try_any_success() {
         let r = do_try!(any());
+
+        assert_eq!(true, r.parse("a".to_string()).fold(
+            |_, _, b| b,
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_satisfy_any_reject() {
+        let r = satisfy!(any(), |c:&char| *c == 'a');
+
+        assert_eq!(true, r.parse("b".to_string()).fold(
+            |_, _, _| panic!("Parse error"),
+            |b| b,
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_satisfy_any_success() {
+        let r = satisfy!(any(), |c:&char| *c == 'a');
 
         assert_eq!(true, r.parse("a".to_string()).fold(
             |_, _, b| b,
