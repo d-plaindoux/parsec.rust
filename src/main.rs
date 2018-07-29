@@ -69,6 +69,7 @@ impl<A> Parser<A> for Returns<A> where A: Copy {
     }
 }
 
+#[allow(dead_code)]
 fn returns<A>(a: A) -> Returns<A> {
     return Returns { a };
 }
@@ -330,6 +331,7 @@ macro_rules! or {
 // Occurrences
 // -------------------------------------------------------------------------------------------------
 
+#[allow(unused_macros)]
 macro_rules! opt {
     ( $p:expr ) => {
         or!(fmap!(|a| Some(a), $p), returns(None))
@@ -383,6 +385,7 @@ pub fn rep<A>(p: Box<Parser<A>>) -> Repeat<A> {
     Repeat { opt: false, p }
 }
 
+#[allow(unused_macros)]
 macro_rules! rep {
     ( $p:expr ) => {
         rep(Box::new($p))
