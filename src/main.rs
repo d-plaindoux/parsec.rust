@@ -1,4 +1,5 @@
 use response::*;
+use std::collections::LinkedList;
 
 fn main() {}
 
@@ -47,9 +48,11 @@ fn returns<A>(a: A) -> Returns<A> {
     return Returns { a };
 }
 
+// -------------------------------------------------------------------------------------------------
+
 pub struct Fails;
 
-impl<A:> Parser<A> for Fails {
+impl<A> Parser<A> for Fails {
     fn parse(&self, _: String) -> Response<A> {
         return Response::Reject(false);
     }
@@ -57,6 +60,58 @@ impl<A:> Parser<A> for Fails {
 
 pub fn fails() -> Fails {
     return Fails {};
+}
+
+// -------------------------------------------------------------------------------------------------
+
+pub struct Any;
+
+impl Parser<char> for Any {
+    fn parse(&self, s: String) -> Response<char> {
+        if s.len() < 1 {
+            return Response::Reject(false);
+        }
+
+        return Response::Success(s.chars().next().unwrap(), s[1..].to_string(), true);
+    }
+}
+
+pub fn any() -> Any {
+    return Any {};
+}
+
+// -------------------------------------------------------------------------------------------------
+
+pub struct Try<A> { p: Box<Parser<A>> }
+
+impl<A> Parser<A> for Try<A> {
+    fn parse(&self, s: String) -> Response<A> {
+        match self.p.parse(s) {
+            Response::Reject(_) => Response::Reject(false),
+            r => r
+        }
+    }
+}
+
+pub fn try<A>(p: Box<Parser<A>>) -> Try<A> {
+    Try { p }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+pub struct Lookahead<A> { p: Box<Parser<A>> }
+
+impl<A> Parser<A> for Lookahead<A> {
+    fn parse(&self, s: String) -> Response<A> {
+        match self.p.parse(s.clone()) {
+            Response::Success(a, _, b) => Response::Success(a, s, b),
+            _ => Response::Reject(false),
+        }
+    }
+}
+
+pub fn lookahead<A>(p: Box<Parser<A>>) -> Lookahead<A> {
+    Lookahead { p }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -73,7 +128,7 @@ impl<A> Parser<A> for Join<A> {
                     Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
                 }
-            },
+            }
             Response::Reject(b1) => Response::Reject(b1)
         }
     }
@@ -137,7 +192,7 @@ impl<A, B> Parser<(A, B)> for And<A, B> {
                     Response::Success(a2, i2, b2) => Response::Success((a1, a2), i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
                 }
-            },
+            }
             Response::Reject(b1) => Response::Reject(b1)
         }
     }
@@ -146,6 +201,7 @@ impl<A, B> Parser<(A, B)> for And<A, B> {
 pub fn and<A, B>(p1: Box<Parser<A>>, p2: Box<Parser<B>>) -> And<A, B> {
     And { p1, p2 }
 }
+
 // -------------------------------------------------------------------------------------------------
 
 pub struct Or<A> { p1: Box<Parser<A>>, p2: Box<Parser<A>> }
@@ -169,6 +225,65 @@ pub fn or<A>(p1: Box<Parser<A>>, p2: Box<Parser<A>>) -> Or<A> {
 }
 
 // -------------------------------------------------------------------------------------------------
+// Occurrences
+// -------------------------------------------------------------------------------------------------
+
+pub struct Opt<A> { p: Box<Parser<A>> }
+
+impl<A> Parser<Option<A>> for Opt<A> {
+    fn parse(&self, s: String) -> Response<Option<A>> {
+        match self.p.parse(s.clone()) { // Borrowing ...
+            Response::Success(a1, i1, b1) => Response::Success(Some(a1), i1, b1),
+            _ => Response::Success(None, s, false)
+        }
+    }
+}
+
+pub fn opt<A>(p: Box<Parser<A>>) -> Opt<A> {
+    Opt { p }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+pub struct Repeat<A> { opt: bool, p: Box<Parser<A>> }
+
+impl<A> Parser<LinkedList<A>> for Repeat<A> {
+    fn parse(&self, s: String) -> Response<LinkedList<A>> {
+        let mut result: LinkedList<A> = Default::default();
+        let mut input = s;
+        let mut consumed = false;
+        let mut parsed = true;
+
+        while parsed {
+            match self.p.parse(input.clone()) {
+                Response::Success(a1, i1, b1) => {
+                    result.push_back(a1);
+                    input = i1;
+                    consumed = consumed || b1;
+                }
+                _ => {
+                    parsed = false;
+                }
+            }
+        }
+
+        if self.opt || result.len() > 0 {
+            return Response::Success(result, input, consumed);
+        }
+
+        return Response::Reject(consumed);
+    }
+}
+
+pub fn optrep<A>(p: Box<Parser<A>>) -> Repeat<A> {
+    Repeat { opt: true, p }
+}
+
+pub fn rep<A>(p: Box<Parser<A>>) -> Repeat<A> {
+    Repeat { opt: false, p }
+}
+
+// -------------------------------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests_parsec {
@@ -180,8 +295,8 @@ mod tests_parsec {
 
         assert_eq!(1, fold(
             r.parse("a".to_string()),
-            |a, _, _| a,
-            |_| 0,
+            |a: u32, _, _| a,
+            |_| panic!("Parse error"),
         ));
     }
 
@@ -190,8 +305,58 @@ mod tests_parsec {
         let r = fails();
         assert_eq!(0, fold(
             r.parse("a".to_string()),
-            |a, _, _| a,
+            |_: u32, _, _| panic!("Parse error"),
             |_| 0,
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_any_success() {
+        let r = any();
+        assert_eq!('a', fold(
+            r.parse("a".to_string()),
+            |a, _, _| a,
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_try_any_reject() {
+        let r = try(Box::new(any()));
+        assert_eq!(false, fold(
+            r.parse("".to_string()),
+            |_, _, _| panic!("Parse error"),
+            |b| b,
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_try_any_success() {
+        let r = try(Box::new(any()));
+        assert_eq!(true, fold(
+            r.parse("a".to_string()),
+            |_, _, b| b,
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_lookahead_any_reject() {
+        let r = lookahead(Box::new(any()));
+        assert_eq!(false, fold(
+            r.parse("".to_string()),
+            |_, _, _| panic!("Parse error"),
+            |b| b,
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_lookahead_any_success() {
+        let r = lookahead(Box::new(any()));
+        assert_eq!(true, fold(
+            r.parse("a".to_string()),
+            |_, _, b| b,
+            |_| panic!("Parse error"),
         ));
     }
 
@@ -202,7 +367,7 @@ mod tests_parsec {
         assert_eq!("1".to_string(), fold(
             r.parse("a".to_string()),
             |a, _, _| a,
-            |_| "0".to_string(),
+            |_| panic!("Parse error"),
         ));
     }
 
@@ -212,7 +377,7 @@ mod tests_parsec {
         let r = fmap(|a: u32| a.to_string(), p);
         assert_eq!("0".to_string(), fold(
             r.parse("a".to_string()),
-            |a, _, _| a,
+            |_, _, _| panic!("Parse error"),
             |_| "0".to_string(),
         ));
     }
@@ -224,7 +389,7 @@ mod tests_parsec {
         assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
-            |_| 0,
+            |_| panic!("Parse error"),
         ));
     }
 
@@ -234,20 +399,20 @@ mod tests_parsec {
         let r = bind(|_| Box::new(fails()), p);
         assert_eq!(0, fold(
             r.parse("a".to_string()),
-            |a, _, _| a,
+            |_: u32, _, _| panic!("Parse error"),
             |_| 0,
         ));
     }
 
     #[test]
     fn it_parse_with_and() {
-        let p1 = Box::new(returns(1));
-        let p2 = Box::new(returns("1"));
-        let r = and(p1,p2);
-        assert_eq!((1,"1"), fold(
-            r.parse("a".to_string()),
+        let p1 = Box::new(any());
+        let p2 = Box::new(any());
+        let r = and(p1, p2);
+        assert_eq!(('a', 'b'), fold(
+            r.parse("ab".to_string()),
             |a, _, _| a,
-            |_| (0,"0")
+            |_| panic!("Parse error"),
         ));
     }
 
@@ -255,11 +420,11 @@ mod tests_parsec {
     fn it_parse_with_or_success() {
         let p1 = Box::new(returns(2));
         let p2 = Box::new(fails());
-        let r = or(p1,p2);
+        let r = or(p1, p2);
         assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
-            |_| 0
+            |_| panic!("Parse error"),
         ));
     }
 
@@ -267,11 +432,57 @@ mod tests_parsec {
     fn it_parse_with_or_reject() {
         let p1 = Box::new(fails());
         let p2 = Box::new(returns(2));
-        let r = or(p1,p2);
+        let r = or(p1, p2);
         assert_eq!(2, fold(
             r.parse("a".to_string()),
             |a, _, _| a,
-            |_| 0
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_optrep_success() {
+        let p1 = Box::new(any());
+        let r = optrep(p1);
+        let s = 1024 * 64;
+        assert_eq!(s, fold(
+            r.parse("a".repeat(s).to_string()),
+            |a, _, _| a.len(),
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_optrep_success_empty() {
+        let p1 = Box::new(any());
+        let r = optrep(p1);
+        assert_eq!(0, fold(
+            r.parse("".to_string()),
+            |a, _, _| a.len(),
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_rep_success() {
+        let p1 = Box::new(any());
+        let r = rep(p1);
+        let s = 1024 * 64;
+        assert_eq!(s, fold(
+            r.parse("a".repeat(s).to_string()),
+            |a, _, _| a.len(),
+            |_| panic!("Parse error"),
+        ));
+    }
+
+    #[test]
+    fn it_parse_with_rep_reject_empty() {
+        let p1 = Box::new(any());
+        let r = rep(p1);
+        assert_eq!(false, fold(
+            r.parse("".to_string()),
+            |_, _, _| panic!("Parse error"),
+            |b| b,
         ));
     }
 }
