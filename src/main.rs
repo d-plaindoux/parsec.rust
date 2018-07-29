@@ -129,7 +129,7 @@ macro_rules! do_try {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Satisfy<A> { p: Box<Parser<A>>, c: fn(&A) -> bool }
+pub struct Satisfy<A> { p: Box<Parser<A>>, c: Box<Fn(&A) -> bool> }
 
 impl<A> Parser<A> for Satisfy<A> {
     fn parse(&self, s: String) -> Response<A> {
@@ -146,13 +146,13 @@ impl<A> Parser<A> for Satisfy<A> {
     }
 }
 
-pub fn satisfy<A>(p: Box<Parser<A>>, c: fn(&A) -> bool) -> Satisfy<A> {
+pub fn satisfy<A>(p: Box<Parser<A>>, c: Box<Fn(&A) -> bool>) -> Satisfy<A> {
     Satisfy { p, c }
 }
 
 macro_rules! satisfy {
     ( $p:expr, $c:expr ) => {
-        satisfy(Box::new($p), $c)
+        satisfy(Box::new($p), Box::new($c))
     };
 }
 // -------------------------------------------------------------------------------------------------
@@ -210,7 +210,7 @@ macro_rules! join {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct FMap<A, B> { f: fn(A) -> B, p: Box<Parser<A>> } // Can we remove this Box
+pub struct FMap<A, B> { f: Box<Fn(A) -> B>, p: Box<Parser<A>> } // Can we remove this Box
 
 impl<A, B> Parser<B> for FMap<A, B> {
     fn parse(&self, s: String) -> Response<B> {
@@ -221,19 +221,19 @@ impl<A, B> Parser<B> for FMap<A, B> {
     }
 }
 
-pub fn fmap<A, B>(f: fn(A) -> B, p: Box<Parser<A>>) -> FMap<A, B> {
+pub fn fmap<A, B>(f: Box<Fn(A) -> B>, p: Box<Parser<A>>) -> FMap<A, B> {
     FMap { f, p }
 }
 
 macro_rules! fmap {
     ( $f:expr , $x:expr ) => {
-        fmap($f, Box::new($x))
+        fmap(Box::new($f), Box::new($x))
     };
 }
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Bind<A, B> { f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>> } // Can we remove this Box
+pub struct Bind<A, B> { f: Box<Fn(A) -> Box<Parser<B>>>, p: Box<Parser<A>> } // Can we remove this Box
 
 impl<A, B> Parser<B> for Bind<A, B> {
     fn parse(&self, s: String) -> Response<B> {
@@ -249,13 +249,13 @@ impl<A, B> Parser<B> for Bind<A, B> {
     }
 }
 
-pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Bind<A, B> {
+pub fn bind<A, B>(f: Box<Fn(A) -> Box<Parser<B>>>, p: Box<Parser<A>>) -> Bind<A, B> {
     Bind { f, p }
 }
 
 macro_rules! bind {
     ( $f:expr , $p:expr ) => {
-        bind($f, Box::new($p))
+        bind(Box::new($f), Box::new($p))
     };
 }
 
@@ -500,7 +500,7 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_bind_success() {
-        let r = bind!(|a| Box::new(returns(a + 1)), returns(1));
+        let r = bind!(|a:u32| Box::new(returns(a + 1)), returns(1));
 
         assert_eq!(2, r.parse("a".to_string()).fold(
             |a, _, _| a,
