@@ -16,10 +16,16 @@ mod response {
     type OnSuccess<A, B> = fn(A, String, bool) -> B;
     type OnReject<B> = fn(bool) -> B;
 
-    pub fn fold<A, B>(s: Response<A>, success: OnSuccess<A, B>, reject: OnReject<B>) -> B {
-        match s {
-            Response::Success(a, s, b) => success(a, s, b),
-            Response::Reject(b) => reject(b)
+    pub trait Fold<A, B> {
+        fn fold(self, success: OnSuccess<A, B>, reject: OnReject<B>) -> B;
+    }
+
+    impl<A, B> Fold<A, B> for Response<A> {
+        fn fold(self, success: OnSuccess<A, B>, reject: OnReject<B>) -> B {
+            match self {
+                Response::Success(a, s, b) => success(a, s, b),
+                Response::Reject(b) => reject(b)
+            }
         }
     }
 }
@@ -222,7 +228,8 @@ pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Bind<A, B> {
 */
 
 pub fn bind<A, B>(f: fn(A) -> Box<Parser<B>>, p: Box<Parser<A>>) -> Parsec<B>
-    where A: 'static, B: 'static {
+    where A: 'static,
+          B: 'static {
     parser!(join!(fmap(f, p)))
 }
 
@@ -377,8 +384,7 @@ mod tests_parsec {
     fn it_parse_with_returns() {
         let r = returns(1);
 
-        assert_eq!(1, fold(
-            r.parse("a".to_string()),
+        assert_eq!(1, r.parse("a".to_string()).fold(
             |a: u32, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -387,8 +393,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_fails() {
         let r = fails();
-        assert_eq!(0, fold(
-            r.parse("a".to_string()),
+
+        assert_eq!(0, r.parse("a".to_string()).fold(
             |_: u32, _, _| panic!("Parse error"),
             |_| 0,
         ));
@@ -397,8 +403,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_any_success() {
         let r = any();
-        assert_eq!('a', fold(
-            r.parse("a".to_string()),
+
+        assert_eq!('a', r.parse("a".to_string()).fold(
             |a, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -407,8 +413,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_try_any_reject() {
         let r = do_try!(any());
-        assert_eq!(false, fold(
-            r.parse("".to_string()),
+
+        assert_eq!(false, r.parse("".to_string()).fold(
             |_, _, _| panic!("Parse error"),
             |b| b,
         ));
@@ -417,8 +423,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_try_any_success() {
         let r = do_try!(any());
-        assert_eq!(true, fold(
-            r.parse("a".to_string()),
+
+        assert_eq!(true, r.parse("a".to_string()).fold(
             |_, _, b| b,
             |_| panic!("Parse error"),
         ));
@@ -427,8 +433,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_lookahead_any_reject() {
         let r = lookahead!(any());
-        assert_eq!(false, fold(
-            r.parse("".to_string()),
+
+        assert_eq!(false, r.parse("".to_string()).fold(
             |_, _, _| panic!("Parse error"),
             |b| b,
         ));
@@ -437,8 +443,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_lookahead_any_success() {
         let r = lookahead!(any());
-        assert_eq!(true, fold(
-            r.parse("a".to_string()),
+
+        assert_eq!(true, r.parse("a".to_string()).fold(
             |_, _, b| b,
             |_| panic!("Parse error"),
         ));
@@ -446,10 +452,9 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_fmap_success() {
-        let p = returns(1);
-        let r = fmap!(|a:u32| a.to_string(), p);
-        assert_eq!("1".to_string(), fold(
-            r.parse("a".to_string()),
+        let r = fmap!(|a:u32| a.to_string(), returns(1));
+
+        assert_eq!("1".to_string(), r.parse("a".to_string()).fold(
             |a, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -457,10 +462,9 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_fmap_reject() {
-        let p = fails();
-        let r = fmap!(|a: u32| a.to_string(), p);
-        assert_eq!("0".to_string(), fold(
-            r.parse("a".to_string()),
+        let r = fmap!(|a: u32| a.to_string(), fails());
+
+        assert_eq!("0".to_string(), r.parse("a".to_string()).fold(
             |_, _, _| panic!("Parse error"),
             |_| "0".to_string(),
         ));
@@ -468,10 +472,9 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_bind_success() {
-        let p = returns(1);
-        let r = bind!(|a| Box::new(returns(a + 1)), p);
-        assert_eq!(2, fold(
-            r.parse("a".to_string()),
+        let r = bind!(|a| Box::new(returns(a + 1)), returns(1));
+
+        assert_eq!(2, r.parse("a".to_string()).fold(
             |a, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -479,10 +482,9 @@ mod tests_parsec {
 
     #[test]
     fn it_parse_with_bind_reject() {
-        let p = returns(1);
-        let r = bind!(|_| Box::new(fails()), p);
-        assert_eq!(0, fold(
-            r.parse("a".to_string()),
+        let r = bind!(|_| Box::new(fails()), returns(1));
+
+        assert_eq!(0, r.parse("a".to_string()).fold(
             |_: u32, _, _| panic!("Parse error"),
             |_| 0,
         ));
@@ -491,8 +493,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_and() {
         let r = and!(any(), any());
-        assert_eq!(('a', 'b'), fold(
-            r.parse("ab".to_string()),
+
+        assert_eq!(('a', 'b'), r.parse("ab".to_string()).fold(
             |a, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -501,8 +503,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_or_success() {
         let r = or!(returns(2), fails());
-        assert_eq!(2, fold(
-            r.parse("a".to_string()),
+
+        assert_eq!(2, r.parse("a".to_string()).fold(
             |a, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -511,8 +513,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_or_reject() {
         let r = or!(fails(), returns(2));
-        assert_eq!(2, fold(
-            r.parse("a".to_string()),
+
+        assert_eq!(2, r.parse("a".to_string()).fold(
             |a, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -521,8 +523,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_opt_success() {
         let r = opt!(any());
-        assert_eq!(Some('a'), fold(
-            r.parse("a".to_string()),
+
+        assert_eq!(Some('a'), r.parse("a".to_string()).fold(
             |a, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -531,8 +533,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_opt_success_empty() {
         let r = opt!(any());
-        assert_eq!(None, fold(
-            r.parse("".to_string()),
+
+        assert_eq!(None, r.parse("".to_string()).fold(
             |a, _, _| a,
             |_| panic!("Parse error"),
         ));
@@ -541,9 +543,9 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_optrep_success() {
         let r = optrep!(any());
+
         let s = 1024 * 64;
-        assert_eq!(s, fold(
-            r.parse("a".repeat(s).to_string()),
+        assert_eq!(s, r.parse("a".repeat(s).to_string()).fold(
             |a, _, _| a.len(),
             |_| panic!("Parse error"),
         ));
@@ -552,8 +554,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_optrep_success_empty() {
         let r = optrep!(any());
-        assert_eq!(0, fold(
-            r.parse("".to_string()),
+
+        assert_eq!(0, r.parse("".to_string()).fold(
             |a, _, _| a.len(),
             |_| panic!("Parse error"),
         ));
@@ -562,9 +564,9 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_rep_success() {
         let r = rep!(any());
+
         let s = 1024 * 64;
-        assert_eq!(s, fold(
-            r.parse("a".repeat(s).to_string()),
+        assert_eq!(s, r.parse("a".repeat(s).to_string()).fold(
             |a, _, _| a.len(),
             |_| panic!("Parse error"),
         ));
@@ -573,8 +575,8 @@ mod tests_parsec {
     #[test]
     fn it_parse_with_rep_reject_empty() {
         let r = rep!(any());
-        assert_eq!(false, fold(
-            r.parse("".to_string()),
+
+        assert_eq!(false, r.parse("".to_string()).fold(
             |_, _, _| panic!("Parse error"),
             |b| b,
         ));
