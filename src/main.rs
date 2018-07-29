@@ -593,7 +593,7 @@ mod tests_parsec {
     fn it_parse_with_rep_success() {
         let r = rep!(any());
 
-        let s = 1024 * 64;
+        let s = 1024 * 256;
         assert_eq!(s, r.parse("a".repeat(s).to_string()).fold(
             |a, _, _| a.len(),
             |_| panic!("Parse error"),
