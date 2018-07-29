@@ -50,6 +50,7 @@ impl<A> Parser<A> for Parsec<A> {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! parser {
     ( $x:expr ) => {
         Parsec { p : Box::new($x) }
@@ -121,6 +122,7 @@ pub fn try<A>(p: Box<Parser<A>>) -> Try<A> {
     Try { p }
 }
 
+#[allow(unused_macros)]
 macro_rules! do_try {
     ( $x:expr ) => {
         try(Box::new($x))
@@ -150,6 +152,7 @@ pub fn satisfy<A>(p: Box<Parser<A>>, c: Box<Fn(&A) -> bool>) -> Satisfy<A> {
     Satisfy { p, c }
 }
 
+#[allow(unused_macros)]
 macro_rules! satisfy {
     ( $p:expr, $c:expr ) => {
         satisfy(Box::new($p), Box::new($c))
@@ -172,6 +175,7 @@ pub fn lookahead<A>(p: Box<Parser<A>>) -> Lookahead<A> {
     Lookahead { p }
 }
 
+#[allow(unused_macros)]
 macro_rules! lookahead {
     ( $x:expr ) => {
         lookahead(Box::new($x))
@@ -202,6 +206,7 @@ pub fn join<A>(p: Box<Parser<Box<Parser<A>>>>) -> Join<A> {
     Join { p }
 }
 
+#[allow(unused_macros)]
 macro_rules! join {
     ( $x:expr ) => {
         join(Box::new($x))
@@ -225,6 +230,7 @@ pub fn fmap<A, B>(f: Box<Fn(A) -> B>, p: Box<Parser<A>>) -> FMap<A, B> {
     FMap { f, p }
 }
 
+#[allow(unused_macros)]
 macro_rules! fmap {
     ( $f:expr , $x:expr ) => {
         fmap(Box::new($f), Box::new($x))
@@ -253,6 +259,7 @@ pub fn bind<A, B>(f: Box<Fn(A) -> Box<Parser<B>>>, p: Box<Parser<A>>) -> Bind<A,
     Bind { f, p }
 }
 
+#[allow(unused_macros)]
 macro_rules! bind {
     ( $f:expr , $p:expr ) => {
         bind(Box::new($f), Box::new($p))
@@ -283,6 +290,7 @@ pub fn and<A, B>(p1: Box<Parser<A>>, p2: Box<Parser<B>>) -> And<A, B> {
     And { p1, p2 }
 }
 
+#[allow(unused_macros)]
 macro_rules! and {
     ( $p1:expr , $p2:expr ) => {
         and(Box::new($p1), Box::new($p2))
@@ -311,6 +319,7 @@ pub fn or<A>(p1: Box<Parser<A>>, p2: Box<Parser<A>>) -> Or<A> {
     Or { p1, p2 }
 }
 
+#[allow(unused_macros)]
 macro_rules! or {
     ( $p1:expr , $p2:expr ) => {
         or(Box::new($p1), Box::new($p2))
@@ -363,6 +372,7 @@ pub fn optrep<A>(p: Box<Parser<A>>) -> Repeat<A> {
     Repeat { opt: true, p }
 }
 
+#[allow(unused_macros)]
 macro_rules! optrep {
     ( $p:expr ) => {
         optrep(Box::new($p))
@@ -383,6 +393,9 @@ macro_rules! rep {
 // Char/String
 // -------------------------------------------------------------------------------------------------
 
+// TODO
+
+// -------------------------------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests_parsec {
