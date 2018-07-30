@@ -1,5 +1,8 @@
-use parser::*;
-use response::*;
+use parsers::basic::*;
+use parsers::core::*;
+use parsers::flow::*;
+use parsers::monadic::*;
+use parsers::response::*;
 
 #[test]
 fn it_parse_with_returns() {
