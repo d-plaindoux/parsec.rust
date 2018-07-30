@@ -1,5 +1,2 @@
 #[macro_use]
-mod parsers;
-
-#[cfg(test)]
-mod tests;
+pub mod parsers;

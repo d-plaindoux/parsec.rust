@@ -1,6 +1,6 @@
-use parsers::basic::*;
-use parsers::core::*;
-use parsers::response::*;
+use parsecute::parsers::basic::*;
+use parsecute::parsers::core::*;
+use parsecute::parsers::response::*;
 
 #[test]
 fn it_parse_with_returns() {

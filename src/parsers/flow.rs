@@ -22,10 +22,12 @@ impl<A, B> Parser<(A, B)> for And<A, B> {
     }
 }
 
+#[inline]
 pub fn and<A, B>(p1: Box<Parser<A>>, p2: Box<Parser<B>>) -> And<A, B> {
     And { p1, p2 }
 }
 
+#[macro_export]
 macro_rules! and {
     ( $p1:expr , $p2:expr ) => {
         and(Box::new($p1), Box::new($p2))
@@ -50,10 +52,12 @@ impl<A> Parser<A> for Or<A> {
     }
 }
 
+#[inline]
 pub fn or<A>(p1: Box<Parser<A>>, p2: Box<Parser<A>>) -> Or<A> {
     Or { p1, p2 }
 }
 
+#[macro_export]
 macro_rules! or {
     ( $p1:expr , $p2:expr ) => {
         or(Box::new($p1), Box::new($p2))
@@ -64,6 +68,7 @@ macro_rules! or {
 // Occurrences
 // -------------------------------------------------------------------------------------------------
 
+#[macro_export]
 macro_rules! opt {
     ( $p:expr ) => {
         or!(fmap!(|a| Some(a), $p), returns(None))
@@ -102,30 +107,26 @@ impl<A> Parser<LinkedList<A>> for Repeat<A> {
     }
 }
 
+#[inline]
 pub fn optrep<A>(p: Box<Parser<A>>) -> Repeat<A> {
     Repeat { opt: true, p }
 }
 
+#[macro_export]
 macro_rules! optrep {
     ( $p:expr ) => {
         optrep(Box::new($p))
     };
 }
 
+#[inline]
 pub fn rep<A>(p: Box<Parser<A>>) -> Repeat<A> {
     Repeat { opt: false, p }
 }
 
+#[macro_export]
 macro_rules! rep {
     ( $p:expr ) => {
         rep(Box::new($p))
     };
 }
-
-// -------------------------------------------------------------------------------------------------
-// Char/String
-// -------------------------------------------------------------------------------------------------
-
-// TODO
-
-// -------------------------------------------------------------------------------------------------

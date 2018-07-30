@@ -21,10 +21,12 @@ impl<A> Parser<A> for Join<A> {
     }
 }
 
+#[inline]
 pub fn join<A>(p: Box<Parser<Box<Parser<A>>>>) -> Join<A> {
     Join { p }
 }
 
+#[macro_export]
 macro_rules! join {
     ( $x:expr ) => {
         join(Box::new($x))
@@ -44,10 +46,12 @@ impl<A, B> Parser<B> for FMap<A, B> {
     }
 }
 
+#[inline]
 pub fn fmap<A, B>(f: Box<Fn(A) -> B>, p: Box<Parser<A>>) -> FMap<A, B> {
     FMap { f, p }
 }
 
+#[macro_export]
 macro_rules! fmap {
     ( $f:expr , $x:expr ) => {
         fmap(Box::new($f), Box::new($x))
@@ -72,10 +76,12 @@ impl<A, B> Parser<B> for Bind<A, B> {
     }
 }
 
+#[inline]
 pub fn bind<A, B>(f: Box<Fn(A) -> Box<Parser<B>>>, p: Box<Parser<A>>) -> Bind<A, B> {
     Bind { f, p }
 }
 
+#[macro_export]
 macro_rules! bind {
     ( $f:expr , $p:expr ) => {
         bind(Box::new($f), Box::new($p))

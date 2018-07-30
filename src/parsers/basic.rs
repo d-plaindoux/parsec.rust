@@ -13,6 +13,7 @@ impl<A> Parser<A> for Returns<A> where A: Copy {
     }
 }
 
+#[inline]
 pub fn returns<A>(a: A) -> Returns<A> {
     return Returns { a };
 }
@@ -27,6 +28,7 @@ impl<A> Parser<A> for Fails {
     }
 }
 
+#[inline]
 pub fn fails() -> Fails {
     return Fails {};
 }
@@ -45,6 +47,7 @@ impl Parser<char> for Any {
     }
 }
 
+#[inline]
 pub fn any() -> Any {
     return Any {};
 }
@@ -62,10 +65,12 @@ impl<A> Parser<A> for Try<A> {
     }
 }
 
+#[inline]
 pub fn try<A>(p: Box<Parser<A>>) -> Try<A> {
     Try { p }
 }
 
+#[macro_export]
 macro_rules! do_try {
     ( $x:expr ) => {
         try(Box::new($x))
@@ -91,10 +96,12 @@ impl<A> Parser<A> for Satisfy<A> {
     }
 }
 
+#[inline]
 pub fn satisfy<A>(p: Box<Parser<A>>, c: Box<Fn(&A) -> bool>) -> Satisfy<A> {
     Satisfy { p, c }
 }
 
+#[macro_export]
 macro_rules! satisfy {
     ( $p:expr, $c:expr ) => {
         satisfy(Box::new($p), Box::new($c))
@@ -113,10 +120,12 @@ impl<A> Parser<A> for Lookahead<A> {
     }
 }
 
+#[inline]
 pub fn lookahead<A>(p: Box<Parser<A>>) -> Lookahead<A> {
     Lookahead { p }
 }
 
+#[macro_export]
 macro_rules! lookahead {
     ( $x:expr ) => {
         lookahead(Box::new($x))

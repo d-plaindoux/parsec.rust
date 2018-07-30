@@ -1,8 +1,10 @@
-use parsers::basic::*;
-use parsers::core::*;
-use parsers::flow::*;
-use parsers::monadic::*;
-use parsers::response::*;
+extern crate parsecute;
+
+use parsecute::parsers::basic::*;
+use parsecute::parsers::core::*;
+use parsecute::parsers::flow::*;
+use parsecute::parsers::monadic::*;
+use parsecute::parsers::response::*;
 
 #[test]
 fn it_parse_with_and() {

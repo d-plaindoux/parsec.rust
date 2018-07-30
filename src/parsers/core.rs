@@ -20,6 +20,7 @@ impl<A> Parser<A> for Parsec<A> {
     }
 }
 
+#[macro_export]
 macro_rules! parser {
     ( $x:expr ) => {
         Parsec { p : Box::new($x) }

@@ -1,7 +1,9 @@
-use parsers::basic::*;
-use parsers::core::*;
-use parsers::monadic::*;
-use parsers::response::*;
+extern crate parsecute;
+
+use parsecute::parsers::basic::*;
+use parsecute::parsers::core::*;
+use parsecute::parsers::monadic::*;
+use parsecute::parsers::response::*;
 
 #[test]
 fn it_parse_with_fmap_success() {
