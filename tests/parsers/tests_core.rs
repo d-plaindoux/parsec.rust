@@ -6,7 +6,7 @@ use parsecute::parsers::response::*;
 fn it_parse_with_returns() {
     let r = returns(1);
 
-    assert_eq!(1, r.parse("a".to_string()).fold(
+    assert_eq!(1, r.parse(&"a", 0).fold(
         |a: u32, _, _| a,
         |_| panic!("Parse error"),
     ));
@@ -16,7 +16,7 @@ fn it_parse_with_returns() {
 fn it_parse_with_returns_no_consumed() {
     let r = returns(1);
 
-    assert_eq!(false, r.parse("a".to_string()).fold(
+    assert_eq!(false, r.parse(&"a", 0).fold(
         |_, _, b| b,
         |_| panic!("Parse error"),
     ));
@@ -26,7 +26,7 @@ fn it_parse_with_returns_no_consumed() {
 fn it_parse_with_fails() {
     let r = fails();
 
-    assert_eq!(0, r.parse("a".to_string()).fold(
+    assert_eq!(0, r.parse(&"a", 0).fold(
         |_: u32, _, _| panic!("Parse error"),
         |_| 0,
     ));
@@ -36,7 +36,7 @@ fn it_parse_with_fails() {
 fn it_parse_with_fails_no_consumed() {
     let r = fails();
 
-    assert_eq!(false, r.parse("a".to_string()).fold(
+    assert_eq!(false, r.parse(&"a", 0).fold(
         |_: u32, _, _| panic!("Parse error"),
         |b| b,
     ));
@@ -46,7 +46,7 @@ fn it_parse_with_fails_no_consumed() {
 fn it_parse_with_any_success() {
     let r = any();
 
-    assert_eq!('a', r.parse("a".to_string()).fold(
+    assert_eq!('a', r.parse(&"a", 0).fold(
         |a, _, _| a,
         |_| panic!("Parse error"),
     ));
@@ -56,7 +56,7 @@ fn it_parse_with_any_success() {
 fn it_parse_with_try_any_reject() {
     let r = do_try!(any());
 
-    assert_eq!(false, r.parse("".to_string()).fold(
+    assert_eq!(false, r.parse(&"", 0).fold(
         |_, _, _| panic!("Parse error"),
         |b| b,
     ));
@@ -66,7 +66,7 @@ fn it_parse_with_try_any_reject() {
 fn it_parse_with_try_any_success() {
     let r = do_try!(any());
 
-    assert_eq!(true, r.parse("a".to_string()).fold(
+    assert_eq!(true, r.parse(&"a", 0).fold(
         |_, _, b| b,
         |_| panic!("Parse error"),
     ));
@@ -76,7 +76,7 @@ fn it_parse_with_try_any_success() {
 fn it_parse_with_satisfy_any_reject() {
     let r = satisfy!(any(), |c:&char| *c == 'a');
 
-    assert_eq!(true, r.parse("b".to_string()).fold(
+    assert_eq!(true, r.parse(&"b", 0).fold(
         |_, _, _| panic!("Parse error"),
         |b| b,
     ));
@@ -86,8 +86,8 @@ fn it_parse_with_satisfy_any_reject() {
 fn it_parse_with_satisfy_any_success_unwrap() {
     let r = satisfy!(any(), |c:&char| *c == 'a');
 
-    assert_eq!(true, r.parse("a".to_string()).fold(
-        |_, s, _| s.len() == 0,
+    assert_eq!(true, r.parse(&"a", 0).fold(
+        |_, s, _| s == 1,
         |_| panic!("Parse error"),
     ));
 }
@@ -96,7 +96,7 @@ fn it_parse_with_satisfy_any_success_unwrap() {
 fn it_parse_with_satisfy_any_success() {
     let r = satisfy!(any(), |c:&char| *c == 'a');
 
-    assert_eq!(true, r.parse("a".to_string()).fold(
+    assert_eq!(true, r.parse(&"a", 0).fold(
         |_, _, b| b,
         |_| panic!("Parse error"),
     ));
@@ -106,7 +106,7 @@ fn it_parse_with_satisfy_any_success() {
 fn it_parse_with_lookahead_any_reject() {
     let r = lookahead!(any());
 
-    assert_eq!(false, r.parse("".to_string()).fold(
+    assert_eq!(false, r.parse(&"", 0).fold(
         |_, _, _| panic!("Parse error"),
         |b| b,
     ));
@@ -116,7 +116,7 @@ fn it_parse_with_lookahead_any_reject() {
 fn it_parse_with_lookahead_any_success() {
     let r = lookahead!(any());
 
-    assert_eq!(true, r.parse("a".to_string()).fold(
+    assert_eq!(true, r.parse(&"a", 0).fold(
         |_, _, b| b,
         |_| panic!("Parse error"),
     ));
@@ -126,8 +126,8 @@ fn it_parse_with_lookahead_any_success() {
 fn it_parse_with_lookahead_any_success_no_unwrap() {
     let r = lookahead!(any());
 
-    assert_eq!(true, r.parse("a".to_string()).fold(
-        |_, s, _| s.len() == 1,
+    assert_eq!(true, r.parse(&"a", 0).fold(
+        |_, s, _| s == 0,
         |_| panic!("Parse error"),
     ));
 }

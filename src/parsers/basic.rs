@@ -8,8 +8,8 @@ use parsers::response::*;
 pub struct Returns<A> { a: A }
 
 impl<A> Parser<A> for Returns<A> where A: Copy {
-    fn parse(&self, s: String) -> Response<A> {
-        Response::Success(self.a, s, false)
+    fn parse(&self, _: &str, o: usize) -> Response<A> {
+        Response::Success(self.a, o, false)
     }
 }
 
@@ -23,7 +23,7 @@ pub fn returns<A>(a: A) -> Returns<A> {
 pub struct Fails;
 
 impl<A> Parser<A> for Fails {
-    fn parse(&self, _: String) -> Response<A> {
+    fn parse(&self, _: &str, _: usize) -> Response<A> {
         return Response::Reject(false);
     }
 }
@@ -38,12 +38,12 @@ pub fn fails() -> Fails {
 pub struct Any;
 
 impl Parser<char> for Any {
-    fn parse(&self, s: String) -> Response<char> {
-        if s.len() < 1 {
+    fn parse(&self, s: &str, o: usize) -> Response<char> {
+        if o  >= s.len() {
             return Response::Reject(false);
         }
 
-        return Response::Success(s.chars().next().unwrap(), s[1..].to_string(), true);
+        return Response::Success(s[o..(o+1)].chars().next().unwrap(), o + 1, true);
     }
 }
 
@@ -57,8 +57,8 @@ pub fn any() -> Any {
 pub struct Try<A> { p: Box<Parser<A>> }
 
 impl<A> Parser<A> for Try<A> {
-    fn parse(&self, s: String) -> Response<A> {
-        match self.p.parse(s) {
+    fn parse(&self, s: &str, o: usize) -> Response<A> {
+        match self.p.parse(s, o) {
             Response::Reject(_) => Response::Reject(false),
             r => r
         }
@@ -82,8 +82,8 @@ macro_rules! do_try {
 pub struct Satisfy<A> { p: Box<Parser<A>>, c: Box<Fn(&A) -> bool> }
 
 impl<A> Parser<A> for Satisfy<A> {
-    fn parse(&self, s: String) -> Response<A> {
-        match self.p.parse(s) {
+    fn parse(&self, s: &str, o: usize) -> Response<A> {
+        match self.p.parse(s, o) {
             Response::Success(a, i, b) => {
                 if (self.c)(&a) {
                     Response::Success(a, i, b)
@@ -112,9 +112,9 @@ macro_rules! satisfy {
 pub struct Lookahead<A> { p: Box<Parser<A>> }
 
 impl<A> Parser<A> for Lookahead<A> {
-    fn parse(&self, s: String) -> Response<A> {
-        match self.p.parse(s.clone()) {
-            Response::Success(a, _, b) => Response::Success(a, s, b),
+    fn parse(&self, s: &str, o: usize) -> Response<A> {
+        match self.p.parse(s, o) {
+            Response::Success(a, _, b) => Response::Success(a, o, b),
             _ => Response::Reject(false),
         }
     }

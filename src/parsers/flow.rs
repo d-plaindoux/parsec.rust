@@ -1,6 +1,5 @@
 use parsers::core::*;
 use parsers::response::*;
-use std::collections::LinkedList;
 
 // -------------------------------------------------------------------------------------------------
 // Flow
@@ -9,10 +8,11 @@ use std::collections::LinkedList;
 pub struct And<A, B> { p1: Box<Parser<A>>, p2: Box<Parser<B>> }
 
 impl<A, B> Parser<(A, B)> for And<A, B> {
-    fn parse(&self, s: String) -> Response<(A, B)> {
-        match self.p1.parse(s) {
+    fn parse(&self, s: &str, o: usize) -> Response<(A, B)> {
+        match self.p1.parse(s, o) {
             Response::Success(a1, i1, b1) => {
-                match self.p2.parse(i1.to_string()) {
+                print!("i2 = {} \n",i1);
+                match self.p2.parse(s, i1) {
                     Response::Success(a2, i2, b2) => Response::Success((a1, a2), i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
                 }
@@ -39,11 +39,11 @@ macro_rules! and {
 pub struct Or<A> { p1: Box<Parser<A>>, p2: Box<Parser<A>> }
 
 impl<A> Parser<A> for Or<A> {
-    fn parse(&self, s: String) -> Response<A> {
-        match self.p1.parse(s.clone()) { // Borrowing ...
+    fn parse(&self, s: &str, o: usize) -> Response<A> {
+        match self.p1.parse(s, o) {
             Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1),
             Response::Reject(b1) => {
-                match self.p2.parse(s) {
+                match self.p2.parse(s, o) {
                     Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2)
                 }
@@ -79,18 +79,18 @@ macro_rules! opt {
 
 pub struct Repeat<A> { opt: bool, p: Box<Parser<A>> }
 
-impl<A> Parser<LinkedList<A>> for Repeat<A> {
-    fn parse(&self, s: String) -> Response<LinkedList<A>> {
-        let mut result: LinkedList<A> = Default::default();
-        let mut input = s;
+impl<A> Parser<Vec<A>> for Repeat<A> {
+    fn parse(&self, s: &str, o: usize) -> Response<Vec<A>> {
+        let mut result: Vec<A> = Vec::with_capacity(13);
+        let mut offset = o;
         let mut consumed = false;
         let mut parsed = true;
 
         while parsed {
-            match self.p.parse(input.clone()) {
+            match self.p.parse(s, offset) {
                 Response::Success(a1, i1, b1) => {
-                    result.push_back(a1);
-                    input = i1;
+                    result.push(a1);
+                    offset = i1;
                     consumed = consumed || b1;
                 }
                 _ => {
@@ -100,7 +100,7 @@ impl<A> Parser<LinkedList<A>> for Repeat<A> {
         }
 
         if self.opt || result.len() > 0 {
-            return Response::Success(result, input, consumed);
+            return Response::Success(result, offset, consumed);
         }
 
         return Response::Reject(consumed);

@@ -5,7 +5,7 @@ use parsers::response::*;
 // -------------------------------------------------------------------------------------------------
 
 pub trait Parser<A> {
-    fn parse(&self, s: String) -> Response<A>;
+    fn parse(&self, s: &str, o: usize) -> Response<A>;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -15,8 +15,8 @@ pub trait Parser<A> {
 pub struct Parsec<A> { p: Box<Parser<A>> }
 
 impl<A> Parser<A> for Parsec<A> {
-    fn parse(&self, s: String) -> Response<A> {
-        self.p.parse(s)
+    fn parse(&self, s: &str, o: usize) -> Response<A> {
+        self.p.parse(s, o)
     }
 }
 

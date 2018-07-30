@@ -1,9 +1,9 @@
 pub enum Response<A> {
-    Success(A, String, bool),
+    Success(A, usize, bool),
     Reject(bool),
 }
 
-type OnSuccess<A, B> = fn(A, String, bool) -> B;
+type OnSuccess<A, B> = fn(A, usize, bool) -> B;
 type OnReject<B> = fn(bool) -> B;
 
 pub trait Fold<A, B> {
