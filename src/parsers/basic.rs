@@ -1,4 +1,4 @@
-use parsers::core::Parser;
+use parsers::core::*;
 use parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------
@@ -39,11 +39,11 @@ pub struct Any;
 
 impl Parser<char> for Any {
     fn parse(&self, s: &str, o: usize) -> Response<char> {
-        if o  >= s.len() {
+        if o >= s.len() {
             return Response::Reject(false);
         }
 
-        return Response::Success(s[o..(o+1)].chars().next().unwrap(), o + 1, true);
+        return Response::Success(s[o..(o + 1)].chars().next().unwrap(), o + 1, true);
     }
 }
 
@@ -54,7 +54,7 @@ pub fn any() -> Any {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Try<A> { p: Box<Parser<A>> }
+pub struct Try<A> { p: Parsec<A> }
 
 impl<A> Parser<A> for Try<A> {
     fn parse(&self, s: &str, o: usize) -> Response<A> {
@@ -66,7 +66,7 @@ impl<A> Parser<A> for Try<A> {
 }
 
 #[inline]
-pub fn try<A>(p: Box<Parser<A>>) -> Try<A> {
+pub fn try<A>(p: Parsec<A>) -> Try<A> {
     Try { p }
 }
 
@@ -79,7 +79,7 @@ macro_rules! do_try {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Satisfy<A> { p: Box<Parser<A>>, c: Box<Fn(&A) -> bool> }
+pub struct Satisfy<A> { p: Parsec<A>, c: Box<Fn(&A) -> bool> }
 
 impl<A> Parser<A> for Satisfy<A> {
     fn parse(&self, s: &str, o: usize) -> Response<A> {
@@ -97,7 +97,7 @@ impl<A> Parser<A> for Satisfy<A> {
 }
 
 #[inline]
-pub fn satisfy<A>(p: Box<Parser<A>>, c: Box<Fn(&A) -> bool>) -> Satisfy<A> {
+pub fn satisfy<A>(p: Parsec<A>, c: Box<Fn(&A) -> bool>) -> Satisfy<A> {
     Satisfy { p, c }
 }
 
@@ -109,7 +109,7 @@ macro_rules! satisfy {
 }
 // -------------------------------------------------------------------------------------------------
 
-pub struct Lookahead<A> { p: Box<Parser<A>> }
+pub struct Lookahead<A> { p: Parsec<A> }
 
 impl<A> Parser<A> for Lookahead<A> {
     fn parse(&self, s: &str, o: usize) -> Response<A> {
@@ -121,7 +121,7 @@ impl<A> Parser<A> for Lookahead<A> {
 }
 
 #[inline]
-pub fn lookahead<A>(p: Box<Parser<A>>) -> Lookahead<A> {
+pub fn lookahead<A>(p: Parsec<A>) -> Lookahead<A> {
     Lookahead { p }
 }
 

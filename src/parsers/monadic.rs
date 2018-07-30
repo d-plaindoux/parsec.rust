@@ -5,7 +5,7 @@ use parsers::response::*;
 // Monadic
 // -------------------------------------------------------------------------------------------------
 
-pub struct Join<A> { p: Box<Parser<Box<Parser<A>>>> } // How this Box of Box can be simplified ?
+pub struct Join<A> { p: Parsec<Parsec<A>> } // How this Box of Box can be simplified ?
 
 impl<A> Parser<A> for Join<A> {
     fn parse(&self, s: &str, o: usize) -> Response<A> {
@@ -22,7 +22,7 @@ impl<A> Parser<A> for Join<A> {
 }
 
 #[inline]
-pub fn join<A>(p: Box<Parser<Box<Parser<A>>>>) -> Join<A> {
+pub fn join<A>(p: Parsec<Parsec<A>>) -> Join<A> {
     Join { p }
 }
 
@@ -35,7 +35,7 @@ macro_rules! join {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct FMap<A, B> { f: Box<Fn(A) -> B>, p: Box<Parser<A>> } // Can we remove this Box
+pub struct FMap<A, B> { f: Box<Fn(A) -> B>, p: Parsec<A> } // Can we remove this Box
 
 impl<A, B> Parser<B> for FMap<A, B> {
     fn parse(&self, s: &str, o: usize) -> Response<B> {
@@ -47,7 +47,7 @@ impl<A, B> Parser<B> for FMap<A, B> {
 }
 
 #[inline]
-pub fn fmap<A, B>(f: Box<Fn(A) -> B>, p: Box<Parser<A>>) -> FMap<A, B> {
+pub fn fmap<A, B>(f: Box<Fn(A) -> B>, p: Parsec<A>) -> FMap<A, B> {
     FMap { f, p }
 }
 
@@ -60,7 +60,7 @@ macro_rules! fmap {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Bind<A, B> { f: Box<Fn(A) -> Box<Parser<B>>>, p: Box<Parser<A>> } // Can we remove this Box
+pub struct Bind<A, B> { f: Box<Fn(A) -> Parsec<B>>, p: Parsec<A> } // Can we remove this Box
 
 impl<A, B> Parser<B> for Bind<A, B> {
     fn parse(&self, s: &str, o: usize) -> Response<B> {
@@ -77,7 +77,7 @@ impl<A, B> Parser<B> for Bind<A, B> {
 }
 
 #[inline]
-pub fn bind<A, B>(f: Box<Fn(A) -> Box<Parser<B>>>, p: Box<Parser<A>>) -> Bind<A, B> {
+pub fn bind<A, B>(f: Box<Fn(A) -> Parsec<B>>, p: Parsec<A>) -> Bind<A, B> {
     Bind { f, p }
 }
 

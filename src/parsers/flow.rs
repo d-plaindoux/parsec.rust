@@ -5,13 +5,13 @@ use parsers::response::*;
 // Flow
 // -------------------------------------------------------------------------------------------------
 
-pub struct And<A, B> { p1: Box<Parser<A>>, p2: Box<Parser<B>> }
+pub struct And<A, B> { p1: Parsec<A>, p2: Parsec<B> }
 
 impl<A, B> Parser<(A, B)> for And<A, B> {
     fn parse(&self, s: &str, o: usize) -> Response<(A, B)> {
         match self.p1.parse(s, o) {
             Response::Success(a1, i1, b1) => {
-                print!("i2 = {} \n",i1);
+                print!("i2 = {} \n", i1);
                 match self.p2.parse(s, i1) {
                     Response::Success(a2, i2, b2) => Response::Success((a1, a2), i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
@@ -23,7 +23,7 @@ impl<A, B> Parser<(A, B)> for And<A, B> {
 }
 
 #[inline]
-pub fn and<A, B>(p1: Box<Parser<A>>, p2: Box<Parser<B>>) -> And<A, B> {
+pub fn and<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
     And { p1, p2 }
 }
 
@@ -36,7 +36,7 @@ macro_rules! and {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Or<A> { p1: Box<Parser<A>>, p2: Box<Parser<A>> }
+pub struct Or<A> { p1: Parsec<A>, p2: Parsec<A> }
 
 impl<A> Parser<A> for Or<A> {
     fn parse(&self, s: &str, o: usize) -> Response<A> {
@@ -53,7 +53,7 @@ impl<A> Parser<A> for Or<A> {
 }
 
 #[inline]
-pub fn or<A>(p1: Box<Parser<A>>, p2: Box<Parser<A>>) -> Or<A> {
+pub fn or<A>(p1: Parsec<A>, p2: Parsec<A>) -> Or<A> {
     Or { p1, p2 }
 }
 
@@ -77,7 +77,7 @@ macro_rules! opt {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Repeat<A> { opt: bool, p: Box<Parser<A>> }
+pub struct Repeat<A> { opt: bool, p: Parsec<A> }
 
 impl<A> Parser<Vec<A>> for Repeat<A> {
     fn parse(&self, s: &str, o: usize) -> Response<Vec<A>> {
@@ -108,7 +108,7 @@ impl<A> Parser<Vec<A>> for Repeat<A> {
 }
 
 #[inline]
-pub fn optrep<A>(p: Box<Parser<A>>) -> Repeat<A> {
+pub fn optrep<A>(p: Parsec<A>) -> Repeat<A> {
     Repeat { opt: true, p }
 }
 
@@ -120,7 +120,7 @@ macro_rules! optrep {
 }
 
 #[inline]
-pub fn rep<A>(p: Box<Parser<A>>) -> Repeat<A> {
+pub fn rep<A>(p: Parsec<A>) -> Repeat<A> {
     Repeat { opt: false, p }
 }
 
