@@ -13,4 +13,4 @@ pub mod monadic;
 pub mod flow;
 
 #[macro_use]
-pub mod chars;
+pub mod literal;

@@ -7,7 +7,7 @@ use parsers::response::*;
 
 pub struct And<A, B> { p1: Parsec<A>, p2: Parsec<B> }
 
-impl<A, B> Parser<(A, B)> for And<A, B> {
+impl<A, B> ParserTrait<(A, B)> for And<A, B> {
     fn do_parse(&self, s: &str, o: usize) -> Response<(A, B)> {
         match self.p1.do_parse(s, o) {
             Response::Success(a1, i1, b1) => {
@@ -38,7 +38,7 @@ macro_rules! and {
 
 pub struct Or<A> { p1: Parsec<A>, p2: Parsec<A> }
 
-impl<A> Parser<A> for Or<A> {
+impl<A> ParserTrait<A> for Or<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<A> {
         match self.p1.do_parse(s, o) {
             Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1),
@@ -79,7 +79,7 @@ macro_rules! opt {
 
 pub struct Repeat<A> { opt: bool, p: Parsec<A> }
 
-impl<A> Parser<Vec<A>> for Repeat<A> {
+impl<A> ParserTrait<Vec<A>> for Repeat<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<Vec<A>> {
         let mut result: Vec<A> = Vec::with_capacity(13);
         let mut offset = o;

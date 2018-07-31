@@ -7,7 +7,7 @@ use parsers::response::*;
 
 pub struct Returns<A> { a: A }
 
-impl<A> Parser<A> for Returns<A> where A: Copy {
+impl<A> ParserTrait<A> for Returns<A> where A: Copy {
     fn do_parse(&self, _: &str, o: usize) -> Response<A> {
         Response::Success(self.a, o, false)
     }
@@ -22,7 +22,7 @@ pub fn returns<A>(a: A) -> Returns<A> {
 
 pub struct Fails;
 
-impl<A> Parser<A> for Fails {
+impl<A> ParserTrait<A> for Fails {
     fn do_parse(&self, _: &str, _: usize) -> Response<A> {
         return Response::Reject(false);
     }
@@ -37,7 +37,7 @@ pub fn fails() -> Fails {
 
 pub struct Eos;
 
-impl Parser<()> for Eos {
+impl ParserTrait<()> for Eos {
     fn do_parse(&self, s: &str, o: usize) -> Response<()> {
         if o < s.len() {
             return Response::Reject(false);
@@ -56,7 +56,7 @@ pub fn eos() -> Eos {
 
 pub struct Any;
 
-impl Parser<char> for Any {
+impl ParserTrait<char> for Any {
     fn do_parse(&self, s: &str, o: usize) -> Response<char> {
         if o >= s.len() {
             return Response::Reject(false);
@@ -75,7 +75,7 @@ pub fn any() -> Any {
 
 pub struct Try<A> { p: Parsec<A> }
 
-impl<A> Parser<A> for Try<A> {
+impl<A> ParserTrait<A> for Try<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<A> {
         match self.p.do_parse(s, o) {
             Response::Reject(_) => Response::Reject(false),
@@ -100,7 +100,7 @@ macro_rules! do_try {
 
 pub struct Satisfy<A> { p: Parsec<A>, c: Box<Fn(&A) -> bool> }
 
-impl<A> Parser<A> for Satisfy<A> {
+impl<A> ParserTrait<A> for Satisfy<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<A> {
         match self.p.do_parse(s, o) {
             Response::Success(a, i, b) => {
@@ -131,7 +131,7 @@ macro_rules! satisfy {
 
 pub struct Lookahead<A> { p: Parsec<A> }
 
-impl<A> Parser<A> for Lookahead<A> {
+impl<A> ParserTrait<A> for Lookahead<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<A> {
         match self.p.do_parse(s, o) {
             Response::Success(a, _, b) => Response::Success(a, o, b),

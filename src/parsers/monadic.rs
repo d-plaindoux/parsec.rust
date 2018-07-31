@@ -7,7 +7,7 @@ use parsers::response::*;
 
 pub struct Join<A> { p: Parsec<Parsec<A>> } // How this Box of Box can be simplified ?
 
-impl<A> Parser<A> for Join<A> {
+impl<A> ParserTrait<A> for Join<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<A> {
         match self.p.do_parse(s, o) {
             Response::Success(a1, i1, b1) => {
@@ -37,7 +37,7 @@ macro_rules! join {
 
 pub struct FMap<A, B> { f: Box<Fn(A) -> B>, p: Parsec<A> } // Can we remove this Box
 
-impl<A, B> Parser<B> for FMap<A, B> {
+impl<A, B> ParserTrait<B> for FMap<A, B> {
     fn do_parse(&self, s: &str, o: usize) -> Response<B> {
         match self.p.do_parse(s, o) {
             Response::Success(a, i, b) => Response::Success((self.f)(a), i, b),
@@ -62,7 +62,7 @@ macro_rules! fmap {
 
 pub struct Bind<A, B> { f: Box<Fn(A) -> Parsec<B>>, p: Parsec<A> } // Can we remove this Box
 
-impl<A, B> Parser<B> for Bind<A, B> {
+impl<A, B> ParserTrait<B> for Bind<A, B> {
     fn do_parse(&self, s: &str, o: usize) -> Response<B> {
         match self.p.do_parse(s, o) {
             Response::Reject(b1) => Response::Reject(b1),

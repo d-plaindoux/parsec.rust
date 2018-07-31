@@ -1,9 +1,7 @@
 extern crate parsecute;
 
-use parsecute::parsers::chars::*;
 use parsecute::parsers::core::*;
-use parsecute::parsers::flow::*;
-use parsecute::parsers::monadic::*;
+use parsecute::parsers::literal::*;
 use parsecute::parsers::response::*;
 
 
@@ -78,11 +76,9 @@ fn it_parse_with_digit() {
 }
 
 #[test]
-fn it_parse_with_number() {
-    let p = and!(or!('+','-'),fmap!(|a:Vec<char>| a.into_iter().collect(), rep!(digit())));
-
-    assert_eq!(-10, p.do_parse(&"-10", 0).fold(
-        |(a, b): (char, String), _, _| (a.to_string() + b.as_str()).parse::<i32>().unwrap(),
+fn it_parse_with_natural() {
+    assert_eq!(-1024, natural().do_parse(&"-1024", 0).fold(
+        |a, _, _| a,
         |_| panic!("Parse error"),
     ));
 }

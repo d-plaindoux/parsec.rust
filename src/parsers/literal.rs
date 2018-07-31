@@ -1,13 +1,14 @@
-use parsers::basic::any;
-use parsers::core::Parsec;
-use parsers::core::Parser;
-use parsers::response::Response;
+use parsers::basic::*;
+use parsers::core::*;
+use parsers::flow::*;
+use parsers::monadic::*;
+use parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------
 // Chars
 // -------------------------------------------------------------------------------------------------
 
-impl Parser<char> for char {
+impl ParserTrait<char> for char {
     fn do_parse(&self, s: &str, o: usize) -> Response<char> {
         let r = any().do_parse(s, o);
         match r {
@@ -17,7 +18,7 @@ impl Parser<char> for char {
     }
 }
 
-impl Parser<String> for String {
+impl ParserTrait<String> for String {
     fn do_parse(&self, s: &str, o: usize) -> Response<String> {
         if o + self.len() > s.len() || unsafe { self.slice_unchecked(o, o + self.len()) } != s {
             return Response::Reject(false);
@@ -27,7 +28,7 @@ impl Parser<String> for String {
     }
 }
 
-impl Parser<char> for fn(char) -> bool {
+impl ParserTrait<char> for fn(char) -> bool {
     fn do_parse(&self, s: &str, o: usize) -> Response<char> {
         let r = any().do_parse(s, o);
         match r {
@@ -54,4 +55,19 @@ pub fn letter() -> fn(char) -> bool {
     };
 
     p
+}
+
+pub fn natural() -> Parser<i32> {
+    parser!(
+        fmap!(
+            |(a,b):(Option<char>, String)|
+                (a.unwrap_or('+').to_string() + b.as_str()).parse::<i32>().unwrap(),
+            and!(opt!(or!('+','-')),
+                fmap!(
+                    |a:Vec<char>| a.into_iter().collect(),
+                    rep!(digit())
+                )
+            )
+        )
+    )
 }
