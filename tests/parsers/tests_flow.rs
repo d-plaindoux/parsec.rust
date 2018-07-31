@@ -18,7 +18,7 @@ fn it_parse_with_and() {
 
 #[test]
 fn it_parse_with_or_success() {
-    let r = or!(returns(2), fails());
+    let r = or!(returns(2),fails());
 
     assert_eq!(2, r.parse(&"a", 0).fold(
         |a, _, _| a,
@@ -82,6 +82,7 @@ fn it_parse_with_rep_success() {
     let r = rep!(any());
 
     let s = 1024 * 1024;
+
     assert_eq!(s, r.parse(&"a".repeat(s), 0).fold(
         |a, _, _| a.len(),
         |_| panic!("Parse error"),
@@ -95,5 +96,35 @@ fn it_parse_with_rep_reject_empty() {
     assert_eq!(false, r.parse(&"", 0).fold(
         |_, _, _| panic!("Parse error"),
         |b| b,
+    ));
+}
+
+#[test]
+fn it_parse_with_take_while() {
+    let r = take_while!(|a| *a != 'b');
+
+    assert_eq!(true, r.parse(&"aaaab", 0).fold(
+        |r:Vec<char>, _, _| r.len() == 4,
+        |_| panic!("Parse error")
+    ));
+}
+
+#[test]
+fn it_parse_with_take_while_empty() {
+    let r = take_while!(|a| *a != 'b');
+
+    assert_eq!(true, r.parse(&"b", 0).fold(
+        |r:Vec<char>, _, _| r.len() == 0,
+        |_| panic!("Parse error")
+    ));
+}
+
+#[test]
+fn it_parse_with_take_while_consumed() {
+    let r = take_while!(|a| *a != 'b');
+
+    assert_eq!(true, r.parse(&"aaaab", 0).fold(
+        |_, _, b| b,
+        |_| panic!("Parse error")
     ));
 }

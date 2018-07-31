@@ -35,6 +35,25 @@ pub fn fails() -> Fails {
 
 // -------------------------------------------------------------------------------------------------
 
+pub struct Eos;
+
+impl Parser<()> for Eos {
+    fn parse(&self, s: &str, o: usize) -> Response<()> {
+        if o < s.len() {
+            return Response::Reject(false);
+        }
+
+        return Response::Success((), o, true);
+    }
+}
+
+#[inline]
+pub fn eos() -> Eos {
+    return Eos {};
+}
+
+// -------------------------------------------------------------------------------------------------
+
 pub struct Any;
 
 impl Parser<char> for Any {
@@ -107,6 +126,7 @@ macro_rules! satisfy {
         satisfy(Box::new($p), Box::new($c))
     };
 }
+
 // -------------------------------------------------------------------------------------------------
 
 pub struct Lookahead<A> { p: Parsec<A> }

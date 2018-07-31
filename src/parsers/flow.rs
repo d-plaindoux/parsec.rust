@@ -130,3 +130,10 @@ macro_rules! rep {
         rep(Box::new($p))
     };
 }
+
+#[macro_export]
+macro_rules! take_while {
+    ( $x:expr ) => {
+        optrep!(do_try!(satisfy!(any(), $x)))
+    };
+}
