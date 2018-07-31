@@ -8,10 +8,10 @@ use parsers::response::*;
 pub struct Join<A> { p: Parsec<Parsec<A>> } // How this Box of Box can be simplified ?
 
 impl<A> Parser<A> for Join<A> {
-    fn parse(&self, s: &str, o: usize) -> Response<A> {
-        match self.p.parse(s, o) {
+    fn do_parse(&self, s: &str, o: usize) -> Response<A> {
+        match self.p.do_parse(s, o) {
             Response::Success(a1, i1, b1) => {
-                match a1.parse(s, i1) {
+                match a1.do_parse(s, i1) {
                     Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
                 }
@@ -38,8 +38,8 @@ macro_rules! join {
 pub struct FMap<A, B> { f: Box<Fn(A) -> B>, p: Parsec<A> } // Can we remove this Box
 
 impl<A, B> Parser<B> for FMap<A, B> {
-    fn parse(&self, s: &str, o: usize) -> Response<B> {
-        match self.p.parse(s, o) {
+    fn do_parse(&self, s: &str, o: usize) -> Response<B> {
+        match self.p.do_parse(s, o) {
             Response::Success(a, i, b) => Response::Success((self.f)(a), i, b),
             Response::Reject(b) => Response::Reject(b)
         }
@@ -63,11 +63,11 @@ macro_rules! fmap {
 pub struct Bind<A, B> { f: Box<Fn(A) -> Parsec<B>>, p: Parsec<A> } // Can we remove this Box
 
 impl<A, B> Parser<B> for Bind<A, B> {
-    fn parse(&self, s: &str, o: usize) -> Response<B> {
-        match self.p.parse(s, o) {
+    fn do_parse(&self, s: &str, o: usize) -> Response<B> {
+        match self.p.do_parse(s, o) {
             Response::Reject(b1) => Response::Reject(b1),
             Response::Success(a1, i1, b1) => {
-                match (self.f)(a1).parse(s, i1) {
+                match (self.f)(a1).do_parse(s, i1) {
                     Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
                 }

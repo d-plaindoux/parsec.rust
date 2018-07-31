@@ -8,11 +8,11 @@ use parsers::response::*;
 pub struct And<A, B> { p1: Parsec<A>, p2: Parsec<B> }
 
 impl<A, B> Parser<(A, B)> for And<A, B> {
-    fn parse(&self, s: &str, o: usize) -> Response<(A, B)> {
-        match self.p1.parse(s, o) {
+    fn do_parse(&self, s: &str, o: usize) -> Response<(A, B)> {
+        match self.p1.do_parse(s, o) {
             Response::Success(a1, i1, b1) => {
                 print!("i2 = {} \n", i1);
-                match self.p2.parse(s, i1) {
+                match self.p2.do_parse(s, i1) {
                     Response::Success(a2, i2, b2) => Response::Success((a1, a2), i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2),
                 }
@@ -39,11 +39,11 @@ macro_rules! and {
 pub struct Or<A> { p1: Parsec<A>, p2: Parsec<A> }
 
 impl<A> Parser<A> for Or<A> {
-    fn parse(&self, s: &str, o: usize) -> Response<A> {
-        match self.p1.parse(s, o) {
+    fn do_parse(&self, s: &str, o: usize) -> Response<A> {
+        match self.p1.do_parse(s, o) {
             Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1),
             Response::Reject(b1) => {
-                match self.p2.parse(s, o) {
+                match self.p2.do_parse(s, o) {
                     Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
                     Response::Reject(b2) => Response::Reject(b1 || b2)
                 }
@@ -80,14 +80,14 @@ macro_rules! opt {
 pub struct Repeat<A> { opt: bool, p: Parsec<A> }
 
 impl<A> Parser<Vec<A>> for Repeat<A> {
-    fn parse(&self, s: &str, o: usize) -> Response<Vec<A>> {
+    fn do_parse(&self, s: &str, o: usize) -> Response<Vec<A>> {
         let mut result: Vec<A> = Vec::with_capacity(13);
         let mut offset = o;
         let mut consumed = false;
         let mut parsed = true;
 
         while parsed {
-            match self.p.parse(s, offset) {
+            match self.p.do_parse(s, offset) {
                 Response::Success(a1, i1, b1) => {
                     result.push(a1);
                     offset = i1;
