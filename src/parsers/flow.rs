@@ -29,9 +29,8 @@ pub fn and<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
 
 #[macro_export]
 macro_rules! and {
-    ( $p1:expr , $p2:expr ) => {
-        and(Box::new($p1), Box::new($p2))
-    };
+    ( $p1:expr ) => { $p1 };
+    ( $p1:expr, $($p2:expr),+ ) => { and(Box::new($p1), Box::new(and!($($p2),*))) };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -59,9 +58,8 @@ pub fn or<A>(p1: Parsec<A>, p2: Parsec<A>) -> Or<A> {
 
 #[macro_export]
 macro_rules! or {
-    ( $p1:expr , $p2:expr ) => {
-        or(Box::new($p1), Box::new($p2))
-    };
+    ( $p1:expr ) => { $p1 };
+    ( $p1:expr, $($p2:expr),+ ) => { or(Box::new($p1), Box::new(or!($($p2),*))) };
 }
 
 // -------------------------------------------------------------------------------------------------
