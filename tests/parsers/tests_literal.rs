@@ -83,3 +83,10 @@ fn it_parse_with_natural() {
     ));
 }
 
+#[test]
+fn it_parse_with_delimited_string() {
+    assert_eq!("1024", string().do_parse(&"\"1024\"", 0).fold(
+        |a, _, _| a,
+        |_| panic!("Parse error"),
+    ));
+}

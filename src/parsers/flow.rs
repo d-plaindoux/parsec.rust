@@ -137,3 +137,10 @@ macro_rules! take_while {
         optrep!(do_try!(satisfy!(any(), $x)))
     };
 }
+
+#[macro_export]
+macro_rules! take_one {
+    ( $x:expr ) => {
+        do_try!(satisfy!(any(), $x))
+    };
+}

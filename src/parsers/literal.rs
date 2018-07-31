@@ -28,46 +28,50 @@ impl ParserTrait<String> for String {
     }
 }
 
-impl ParserTrait<char> for fn(char) -> bool {
-    fn do_parse(&self, s: &str, o: usize) -> Response<char> {
-        let r = any().do_parse(s, o);
-        match r {
-            Response::Success(a, _, _) if { self(a) } => r,
-            _ => Response::Reject(false)
-        }
-    }
+pub fn digit() -> Parser<char> {
+    parser!(
+        take_one!(|a| {
+            match *a {
+                '0'...'9' => true,
+                _ => false
+            }
+        })
+    )
 }
 
-pub fn digit() -> fn(char) -> bool {
-    let p: fn(char) -> bool = |a| match a {
-        '0'...'9' => true,
-        _ => false
-    };
-
-    p
-}
-
-pub fn letter() -> fn(char) -> bool {
-    let p: fn(char) -> bool = |a| match a {
-        'a'...'z' => true,
-        'A'...'Z' => true,
-        _ => false
-    };
-
-    p
+pub fn letter() -> Parser<char> {
+    parser!(
+        take_one!(|a| {
+            match *a {
+                'a'...'z' => true,
+                'A'...'Z' => true,
+                _ => false
+            }
+        })
+    )
 }
 
 pub fn natural() -> Parser<i32> {
     parser!(
         fmap!(
-            |(a,b):(Option<char>, String)|
-                (a.unwrap_or('+').to_string() + b.as_str()).parse::<i32>().unwrap(),
-            and!(opt!(or!('+','-')),
-                fmap!(
-                    |a:Vec<char>| a.into_iter().collect(),
-                    rep!(digit())
-                )
-            )
+            |(a,b):(Option<char>, Vec<char>)| {
+                let result = b.into_iter().collect::<String>().parse::<i32>().unwrap();
+
+                match a {
+                    Some('-') => -1 * result,
+                    _ => result
+                }
+            },
+            and!(opt!(or!('+','-')), rep!(digit()))
+        )
+    )
+}
+
+pub fn string() -> Parser<String> {
+    parser!(
+        fmap!(
+            |(_,(b,_)):(char, (Vec<char>, char))| b.into_iter().collect::<String>(),
+            and!('"', and!(take_while!(|c| *c != '"'), '"' ))
         )
     )
 }

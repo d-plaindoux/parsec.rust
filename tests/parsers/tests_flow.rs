@@ -104,8 +104,8 @@ fn it_parse_with_take_while() {
     let r = take_while!(|a| *a != 'b');
 
     assert_eq!(true, r.do_parse(&"aaaab", 0).fold(
-        |r:Vec<char>, _, _| r.len() == 4,
-        |_| panic!("Parse error")
+        |r: Vec<char>, _, _| r.len() == 4,
+        |_| panic!("Parse error"),
     ));
 }
 
@@ -114,8 +114,8 @@ fn it_parse_with_take_while_empty() {
     let r = take_while!(|a| *a != 'b');
 
     assert_eq!(true, r.do_parse(&"b", 0).fold(
-        |r:Vec<char>, _, _| r.len() == 0,
-        |_| panic!("Parse error")
+        |r: Vec<char>, _, _| r.len() == 0,
+        |_| panic!("Parse error"),
     ));
 }
 
@@ -125,6 +125,6 @@ fn it_parse_with_take_while_consumed() {
 
     assert_eq!(true, r.do_parse(&"aaaab", 0).fold(
         |_, _, b| b,
-        |_| panic!("Parse error")
+        |_| panic!("Parse error"),
     ));
 }
