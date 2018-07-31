@@ -67,11 +67,20 @@ pub fn natural() -> Parser<i32> {
     )
 }
 
-pub fn string() -> Parser<String> {
+pub fn string_delim() -> Parser<String> {
     parser!(
         fmap!(
             |(_,(b,_)):(char, (Vec<char>, char))| b.into_iter().collect::<String>(),
             and!('"', and!(take_while!(|c| *c != '"'), '"' ))
+        )
+    )
+}
+
+pub fn char_delim() -> Parser<char> {
+    parser!(
+        fmap!(
+            |(_,(b,_)):(char, (char, char))| b,
+            and!('\'', and!(take_one!(|c| *c != '\''), '\'' ))
         )
     )
 }
