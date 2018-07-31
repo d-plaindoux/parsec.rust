@@ -8,16 +8,10 @@ use parsers::response::Response;
 
 impl Parser<char> for char {
     fn parse(&self, s: &str, o: usize) -> Response<char> {
-        let response = any().parse(s, o);
-        match response {
-            Response::Success(a, _, _) => {
-                if a == *self {
-                    return response;
-                }
-
-                return Response::Reject(false);
-            }
-            r => r
+        let r = any().parse(s, o);
+        match r {
+            Response::Success(a, _, _) if { *self == a } => r,
+            _ => Response::Reject(false)
         }
     }
 }
@@ -28,22 +22,18 @@ impl Parser<String> for String {
             return Response::Reject(false);
         }
 
-        return Response::Success(self.get(o..o + self.len()).unwrap().to_string(), o + self.len(), self.len() > 0);
+        Response::Success(self.get(o..o + self.len()).unwrap().to_string(), o + self.len(), self.len() > 0)
     }
 }
 
 impl Parser<char> for fn(char) -> bool {
     fn parse(&self, s: &str, o: usize) -> Response<char> {
-        let response = any().parse(s, o);
-        match response {
-            Response::Success(a, _, _) => {
-                if self(a) {
-                    return response;
-                }
-
-                return Response::Reject(false);
-            }
-            r => r
+        let r = any().parse(s, o);
+        match r {
+            Response::Success(a, _, _) if { self(a) } => r,
+            _ => Response::Reject(false)
         }
     }
 }
+
+
