@@ -62,7 +62,7 @@ pub fn natural() -> Parser<i32> {
                     _ => result
                 }
             },
-            then!(opt!(or!('+','-')), rep!(digit()))
+            and!(opt!(or!('+','-')), rep!(digit()))
         )
     )
 }
@@ -71,7 +71,7 @@ pub fn string_delim() -> Parser<String> {
     parser!(
         fmap!(
             |(_,(b,_)):(char, (Vec<char>, char))| b.into_iter().collect::<String>(),
-            then!(
+            and!(
                 '"',
                 optrep!(
                     or!(
@@ -89,7 +89,7 @@ pub fn char_delim() -> Parser<char> {
     parser!(
         fmap!(
             |(_,(b,_)):(char, (char, char))| b,
-            then!(
+            and!(
                 '\'',
                 or!(
                     fmap!(|_| '\'', "\\\'".to_string()),

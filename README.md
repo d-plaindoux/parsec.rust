@@ -12,8 +12,8 @@ implementation from scratch in [Rust](https://www.rust-lang.org/en-US/).
 // item    ::= [^,]*
 // csvline ::= item (',' item)*
 
-let item    = take_while!(|c| *c != ',');
-let csvline = then!(item, optrep!(then!(',', item)));
+let item = || take_while!(|c| *c != ',');
+let csvline = and!(item(), optrep!(',', item()));
 ```
 
 # License

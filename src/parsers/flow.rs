@@ -22,14 +22,14 @@ impl<A, B> ParserTrait<(A, B)> for And<A, B> {
 }
 
 #[inline]
-pub fn then<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
+pub fn and<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
     And { p1, p2 }
 }
 
 #[macro_export]
-macro_rules! then {
+macro_rules! and {
     ( $p1:expr ) => { $p1 };
-    ( $p1:expr, $($p2:expr),+ )  => { then(Box::new($p1), Box::new(then!($($p2),*))) };
+    ( $p1:expr, $($p2:expr),+ )  => { and(Box::new($p1), Box::new(and!($($p2),*))) };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -69,6 +69,9 @@ macro_rules! or {
 macro_rules! opt {
     ( $p:expr ) => {
         or!(fmap!(|a| Some(a), $p), returns(None))
+    };
+    ( $($p:expr),+ ) => {
+        or!(fmap!(|a| Some(a), and!($($p),*)), returns(None))
     };
 }
 
@@ -114,6 +117,9 @@ macro_rules! optrep {
     ( $p:expr ) => {
         optrep(Box::new($p))
     };
+    ( $($p:expr),+ ) => {
+        optrep!(and!($($p),*))
+    };
 }
 
 #[inline]
@@ -126,6 +132,10 @@ macro_rules! rep {
     ( $p:expr ) => {
         rep(Box::new($p))
     };
+    ( $($p:expr),+ ) => {
+        rep!(and!($($p),*))
+    };
+
 }
 
 // -------------------------------------------------------------------------------------------------
