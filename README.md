@@ -1,11 +1,20 @@
 # Parser Combinator in Rust
 
 [![Build Status](https://travis-ci.org/d-plaindoux/parsec.rust.svg?branch=master)](https://travis-ci.org/d-plaindoux/parsec.rust)
+[![unstable](http://badges.github.io/stability-badges/dist/unstable.svg)](http://github.com/badges/stability-badges)
 
 # Objective 
 
 A [parser combinator library](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf)
 implementation from scratch in [Rust](https://www.rust-lang.org/en-US/).
+
+```rust
+// item    ::= [^,]*
+// csvline ::= item (',' item)*
+
+let item    = take_while!(|c| *c != ',');
+let csvline = then!(item, optrep!(then!(',', item)));
+```
 
 # License
 

@@ -22,14 +22,14 @@ impl<A, B> ParserTrait<(A, B)> for And<A, B> {
 }
 
 #[inline]
-pub fn and<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
+pub fn then<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
     And { p1, p2 }
 }
 
 #[macro_export]
-macro_rules! and {
+macro_rules! then {
     ( $p1:expr ) => { $p1 };
-    ( $p1:expr, $($p2:expr),+ )  => { and(Box::new($p1), Box::new(and!($($p2),*))) };
+    ( $p1:expr, $($p2:expr),+ )  => { then(Box::new($p1), Box::new(then!($($p2),*))) };
 }
 
 // -------------------------------------------------------------------------------------------------

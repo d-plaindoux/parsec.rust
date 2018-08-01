@@ -103,7 +103,7 @@ fn it_parse_with_delimited_char() {
 
 #[test]
 fn it_parse_extracting_natural() {
-    let p = fmap!(|(_,(b,_))| b, and!("Hello<".to_string(), natural(), '>'));
+    let p = fmap!(|(_,(b,_))| b, then!("Hello<".to_string(), natural(), '>'));
 
     assert_eq!(42, p.do_parse(&"Hello<42>", 0).fold(
         |a, _, _| a,
