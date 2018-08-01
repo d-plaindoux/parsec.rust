@@ -5,7 +5,7 @@ use parsers::response::*;
 // Flow
 // -------------------------------------------------------------------------------------------------
 
-pub struct And<A, B> { p1: Parsec<A>, p2: Parsec<B> }
+pub struct Seq<A, B> { p1: Parsec<A>, p2: Parsec<B> }
 
 impl<A, B> ParserTrait<(A, B)> for And<A, B> {
     fn do_parse(&self, s: &str, o: usize) -> Response<(A, B)> {
@@ -22,14 +22,14 @@ impl<A, B> ParserTrait<(A, B)> for And<A, B> {
 }
 
 #[inline]
-pub fn and<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
+pub fn seq<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
     And { p1, p2 }
 }
 
 #[macro_export]
-macro_rules! and {
+macro_rules! seq {
     ( $p1:expr ) => { $p1 };
-    ( $p1:expr, $($p2:expr),+ )  => { and(Box::new($p1), Box::new(and!($($p2),*))) };
+    ( $p1:expr, $($p2:expr),+ )  => { seq(Box::new($p1), Box::new(seq!($($p2),*))) };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -71,7 +71,7 @@ macro_rules! opt {
         or!(fmap!(|a| Some(a), $p), returns(None))
     };
     ( $($p:expr),+ ) => {
-        or!(fmap!(|a| Some(a), and!($($p),*)), returns(None))
+        or!(fmap!(|a| Some(a), seq!($($p),*)), returns(None))
     };
 }
 
@@ -118,7 +118,7 @@ macro_rules! optrep {
         optrep(Box::new($p))
     };
     ( $($p:expr),+ ) => {
-        optrep!(and!($($p),*))
+        optrep!(seq!($($p),*))
     };
 }
 
@@ -133,7 +133,7 @@ macro_rules! rep {
         rep(Box::new($p))
     };
     ( $($p:expr),+ ) => {
-        rep!(and!($($p),*))
+        rep!(seq!($($p),*))
     };
 
 }

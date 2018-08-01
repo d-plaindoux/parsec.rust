@@ -7,8 +7,8 @@ use parsecute::parsers::monadic::*;
 use parsecute::parsers::response::*;
 
 #[test]
-fn it_parse_with_and() {
-    let r = and!(any(), any());
+fn it_parse_with_seq() {
+    let r = seq!(any(), any());
 
     assert_eq!(('a', 'b'), r.do_parse(&"ab", 0).fold(
         |a, _, _| a,

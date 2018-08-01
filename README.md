@@ -13,7 +13,7 @@ implementation from scratch in [Rust](https://www.rust-lang.org/en-US/).
 // csvline ::= item (',' item)*
 
 let item = || take_while!(|c| *c != ',');
-let csvline = and!(item(), optrep!(',', item()));
+let csvline = seq!(item(), optrep!(',', item()));
 ```
 
 # License
