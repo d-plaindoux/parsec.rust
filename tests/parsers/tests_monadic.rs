@@ -11,7 +11,7 @@ fn it_parse_with_fmap_success() {
 
     assert_eq!("1", r.do_parse(&"a", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _|panic!("Parse error"),
     ));
 }
 
@@ -21,7 +21,7 @@ fn it_parse_with_fmap_reject() {
 
     assert_eq!("0", r.do_parse(&"a", 0).fold(
         |_, _, _| panic!("Parse error"),
-        |_| "0",
+        |_, _|"0",
     ));
 }
 
@@ -31,16 +31,16 @@ fn it_parse_with_bind_success() {
 
     assert_eq!(2, r.do_parse(&"a", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _|panic!("Parse error"),
     ));
 }
 
 #[test]
 fn it_parse_with_bind_reject() {
-    let r = bind!(|_| Box::new(fails()), returns(1));
+    let r = bind!(|_|Box::new(fails()), returns(1));
 
     assert_eq!(0, r.do_parse(&"a", 0).fold(
         |_: u32, _, _| panic!("Parse error"),
-        |_| 0,
+        |_, _|0,
     ));
 }

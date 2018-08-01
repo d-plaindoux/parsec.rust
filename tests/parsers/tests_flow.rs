@@ -12,7 +12,7 @@ fn it_parse_with_and() {
 
     assert_eq!(('a', 'b'), r.do_parse(&"ab", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -22,7 +22,7 @@ fn it_parse_with_or_success() {
 
     assert_eq!(2, r.do_parse(&"a", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -32,7 +32,7 @@ fn it_parse_with_or_reject() {
 
     assert_eq!(2, r.do_parse(&"a", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -42,7 +42,7 @@ fn it_parse_with_opt_success() {
 
     assert_eq!(Some('a'), r.do_parse(&"a", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -52,7 +52,7 @@ fn it_parse_with_opt_success_empty() {
 
     assert_eq!(None, r.do_parse(&"", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -63,7 +63,7 @@ fn it_parse_with_optrep_success() {
     let s = 1024 * 1024;
     assert_eq!(s, r.do_parse(&"a".repeat(s), 0).fold(
         |a, _, _| a.len(),
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -73,7 +73,7 @@ fn it_parse_with_optrep_success_empty() {
 
     assert_eq!(0, r.do_parse(&"", 0).fold(
         |a, _, _| a.len(),
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -85,7 +85,7 @@ fn it_parse_with_rep_success() {
 
     assert_eq!(s, r.do_parse(&"a".repeat(s), 0).fold(
         |a, _, _| a.len(),
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -95,7 +95,7 @@ fn it_parse_with_rep_reject_empty() {
 
     assert_eq!(false, r.do_parse(&"", 0).fold(
         |_, _, _| panic!("Parse error"),
-        |b| b,
+        |_, b| b,
     ));
 }
 
@@ -105,7 +105,7 @@ fn it_parse_with_take_while() {
 
     assert_eq!(true, r.do_parse(&"aaaab", 0).fold(
         |r: Vec<char>, _, _| r.len() == 4,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -115,7 +115,7 @@ fn it_parse_with_take_while_empty() {
 
     assert_eq!(true, r.do_parse(&"b", 0).fold(
         |r: Vec<char>, _, _| r.len() == 0,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -125,6 +125,6 @@ fn it_parse_with_take_while_consumed() {
 
     assert_eq!(true, r.do_parse(&"aaaab", 0).fold(
         |_, _, b| b,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }

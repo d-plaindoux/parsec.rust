@@ -23,8 +23,8 @@ pub fn returns<A>(a: A) -> Returns<A> {
 pub struct Fails;
 
 impl<A> ParserTrait<A> for Fails {
-    fn do_parse(&self, _: &str, _: usize) -> Response<A> {
-        return Response::Reject(false);
+    fn do_parse(&self, _: &str, o: usize) -> Response<A> {
+        return Response::Reject(o, false);
     }
 }
 
@@ -40,7 +40,7 @@ pub struct Eos;
 impl ParserTrait<()> for Eos {
     fn do_parse(&self, s: &str, o: usize) -> Response<()> {
         if o < s.len() {
-            return Response::Reject(false);
+            return Response::Reject(o, false);
         }
 
         return Response::Success((), o, true);
@@ -59,7 +59,7 @@ pub struct Any;
 impl ParserTrait<char> for Any {
     fn do_parse(&self, s: &str, o: usize) -> Response<char> {
         if o >= s.len() {
-            return Response::Reject(false);
+            return Response::Reject(o, false);
         }
 
         return Response::Success(s[o..(o + 1)].chars().next().unwrap(), o + 1, true);
@@ -78,7 +78,7 @@ pub struct Try<A> { p: Parsec<A> }
 impl<A> ParserTrait<A> for Try<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<A> {
         match self.p.do_parse(s, o) {
-            Response::Reject(_) => Response::Reject(false),
+            Response::Reject(i, _) => Response::Reject(i, false),
             r => r
         }
     }
@@ -107,7 +107,7 @@ impl<A> ParserTrait<A> for Satisfy<A> {
                 if (self.c)(&a) {
                     Response::Success(a, i, b)
                 } else {
-                    Response::Reject(b)
+                    Response::Reject(i, b)
                 }
             }
             r => r,
@@ -135,7 +135,7 @@ impl<A> ParserTrait<A> for Lookahead<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<A> {
         match self.p.do_parse(s, o) {
             Response::Success(a, _, b) => Response::Success(a, o, b),
-            _ => Response::Reject(false),
+            _ => Response::Reject(o, false),
         }
     }
 }

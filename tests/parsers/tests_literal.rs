@@ -1,7 +1,9 @@
 extern crate parsecute;
 
 use parsecute::parsers::core::*;
+use parsecute::parsers::flow::*;
 use parsecute::parsers::literal::*;
+use parsecute::parsers::monadic::*;
 use parsecute::parsers::response::*;
 
 
@@ -11,7 +13,7 @@ fn it_parse_with_char() {
 
     assert_eq!('a', r.do_parse(&"ab", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -21,7 +23,7 @@ fn it_parse_with_char_consumed() {
 
     assert_eq!(true, r.do_parse(&"ab", 0).fold(
         |_, _, b| b,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -31,7 +33,7 @@ fn it_parse_with_char_rejected() {
 
     assert_eq!(false, r.do_parse(&"b", 0).fold(
         |_, _, _| panic!("Parse error"),
-        |b| b,
+        |_, b| b,
     ));
 }
 
@@ -42,7 +44,7 @@ fn it_parse_with_string() {
 
     assert_eq!(r, r.do_parse(&s, 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -53,7 +55,7 @@ fn it_parse_with_string_consumed() {
 
     assert_eq!(true, r.do_parse(&s, 0).fold(
         |_, _, b| b,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -63,7 +65,7 @@ fn it_parse_with_string_rejected() {
 
     assert_eq!(false, r.do_parse(&"aa", 0).fold(
         |_, _, _| panic!("Parse error"),
-        |b| b,
+        |_, b| b,
     ));
 }
 
@@ -71,7 +73,7 @@ fn it_parse_with_string_rejected() {
 fn it_parse_with_digit() {
     assert_eq!('0', digit().do_parse(&"0", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -79,7 +81,7 @@ fn it_parse_with_digit() {
 fn it_parse_with_natural() {
     assert_eq!(-1024, natural().do_parse(&"-1024", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -87,7 +89,7 @@ fn it_parse_with_natural() {
 fn it_parse_with_delimited_string() {
     assert_eq!("1024", string_delim().do_parse(&"\"1024\"", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -95,6 +97,16 @@ fn it_parse_with_delimited_string() {
 fn it_parse_with_delimited_char() {
     assert_eq!('a', char_delim().do_parse(&"'a'", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
+    ));
+}
+
+#[test]
+fn it_parse_extracting_natural() {
+    let p = fmap!(|(_,(b,_))| b, and!("Hello<".to_string(), natural(), '>'));
+
+    assert_eq!(42, p.do_parse(&"Hello<42>", 0).fold(
+        |a, _, _| a,
+        |_, _| panic!("Parse error")
     ));
 }

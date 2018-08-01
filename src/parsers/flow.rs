@@ -11,13 +11,12 @@ impl<A, B> ParserTrait<(A, B)> for And<A, B> {
     fn do_parse(&self, s: &str, o: usize) -> Response<(A, B)> {
         match self.p1.do_parse(s, o) {
             Response::Success(a1, i1, b1) => {
-                print!("i2 = {} \n", i1);
                 match self.p2.do_parse(s, i1) {
                     Response::Success(a2, i2, b2) => Response::Success((a1, a2), i2, b1 || b2),
-                    Response::Reject(b2) => Response::Reject(b1 || b2),
+                    Response::Reject(i2, b2) => Response::Reject(i2, b1 || b2),
                 }
             }
-            Response::Reject(b1) => Response::Reject(b1)
+            Response::Reject(i1, b1) => Response::Reject(i1, b1)
         }
     }
 }
@@ -30,7 +29,7 @@ pub fn and<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
 #[macro_export]
 macro_rules! and {
     ( $p1:expr ) => { $p1 };
-    ( $p1:expr, $($p2:expr),+ ) => { and(Box::new($p1), Box::new(and!($($p2),*))) };
+    ( $p1:expr, $($p2:expr),+ )  => { and(Box::new($p1), Box::new(and!($($p2),*))) };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -41,10 +40,10 @@ impl<A> ParserTrait<A> for Or<A> {
     fn do_parse(&self, s: &str, o: usize) -> Response<A> {
         match self.p1.do_parse(s, o) {
             Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1),
-            Response::Reject(b1) => {
+            Response::Reject(_, b1) => {
                 match self.p2.do_parse(s, o) {
                     Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
-                    Response::Reject(b2) => Response::Reject(b1 || b2)
+                    Response::Reject(i2, b2) => Response::Reject(i2, b1 || b2) // TODO max i1 o2
                 }
             }
         }
@@ -101,7 +100,7 @@ impl<A> ParserTrait<Vec<A>> for Repeat<A> {
             return Response::Success(result, offset, consumed);
         }
 
-        return Response::Reject(consumed);
+        return Response::Reject(offset, consumed);
     }
 }
 
@@ -128,6 +127,8 @@ macro_rules! rep {
         rep(Box::new($p))
     };
 }
+
+// -------------------------------------------------------------------------------------------------
 
 #[macro_export]
 macro_rules! take_while {

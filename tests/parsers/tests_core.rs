@@ -8,7 +8,7 @@ fn it_parse_with_returns() {
 
     assert_eq!(1, r.do_parse(&"a", 0).fold(
         |a: u32, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -18,7 +18,7 @@ fn it_parse_with_returns_no_consumed() {
 
     assert_eq!(false, r.do_parse(&"a", 0).fold(
         |_, _, b| b,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -28,7 +28,7 @@ fn it_parse_with_fails() {
 
     assert_eq!(0, r.do_parse(&"a", 0).fold(
         |_: u32, _, _| panic!("Parse error"),
-        |_| 0,
+        |_, _| 0,
     ));
 }
 
@@ -38,7 +38,7 @@ fn it_parse_with_fails_no_consumed() {
 
     assert_eq!(false, r.do_parse(&"a", 0).fold(
         |_: u32, _, _| panic!("Parse error"),
-        |b| b,
+        |_, b| b,
     ));
 }
 
@@ -48,7 +48,7 @@ fn it_parse_with_any_success() {
 
     assert_eq!('a', r.do_parse(&"a", 0).fold(
         |a, _, _| a,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -58,7 +58,7 @@ fn it_parse_with_try_any_reject() {
 
     assert_eq!(false, r.do_parse(&"", 0).fold(
         |_, _, _| panic!("Parse error"),
-        |b| b,
+        |_, b| b,
     ));
 }
 
@@ -68,7 +68,7 @@ fn it_parse_with_try_any_success() {
 
     assert_eq!(true, r.do_parse(&"a", 0).fold(
         |_, _, b| b,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -78,7 +78,7 @@ fn it_parse_with_satisfy_any_reject() {
 
     assert_eq!(true, r.do_parse(&"b", 0).fold(
         |_, _, _| panic!("Parse error"),
-        |b| b,
+        |_, b| b,
     ));
 }
 
@@ -88,7 +88,7 @@ fn it_parse_with_satisfy_any_success_unwrap() {
 
     assert_eq!(true, r.do_parse(&"a", 0).fold(
         |_, s, _| s == 1,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -98,7 +98,7 @@ fn it_parse_with_satisfy_any_success() {
 
     assert_eq!(true, r.do_parse(&"a", 0).fold(
         |_, _, b| b,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -108,7 +108,7 @@ fn it_parse_with_lookahead_any_reject() {
 
     assert_eq!(false, r.do_parse(&"", 0).fold(
         |_, _, _| panic!("Parse error"),
-        |b| b,
+        |_, b| b,
     ));
 }
 
@@ -118,7 +118,7 @@ fn it_parse_with_lookahead_any_success() {
 
     assert_eq!(true, r.do_parse(&"a", 0).fold(
         |_, _, b| b,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }
 
@@ -128,6 +128,6 @@ fn it_parse_with_lookahead_any_success_no_unwrap() {
 
     assert_eq!(true, r.do_parse(&"a", 0).fold(
         |_, s, _| s == 0,
-        |_| panic!("Parse error"),
+        |_, _| panic!("Parse error"),
     ));
 }

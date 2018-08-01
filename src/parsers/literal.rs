@@ -13,15 +13,15 @@ impl ParserTrait<char> for char {
         let r = any().do_parse(s, o);
         match r {
             Response::Success(a, _, _) if { *self == a } => r,
-            _ => Response::Reject(false)
+            _ => Response::Reject(o, false)
         }
     }
 }
 
 impl ParserTrait<String> for String {
     fn do_parse(&self, s: &str, o: usize) -> Response<String> {
-        if o + self.len() > s.len() || unsafe { self.slice_unchecked(o, o + self.len()) } != s {
-            return Response::Reject(false);
+        if o + self.len() > s.len() || unsafe { s.slice_unchecked(o, o + self.len()) } != self {
+            return Response::Reject(o, false);
         }
 
         Response::Success(self.get(o..o + self.len()).unwrap().to_string(), o + self.len(), self.len() > 0)
