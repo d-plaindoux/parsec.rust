@@ -8,7 +8,7 @@
 A [parser combinator library](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf)
 implementation from scratch in [Rust](https://www.rust-lang.org/en-US/).
 
-#Example
+# Example
 
 ```rust
 // item    ::= [^,]*
