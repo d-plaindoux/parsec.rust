@@ -112,7 +112,13 @@ fn it_parse_extracting_natural() {
     ));
 }
 
-fn main() {
+#[test]
+fn it_parse_extracting_cvs_items() {
     let item = || take_while!(|c| *c != ',');
-    let csvline = seq!(item(), optrep!(',', item()));
+    let csvline = seq!(item(), optrep!(fmap!(|(_,b)| b, seq!(',' , item()))));
+
+    assert_eq!(4, csvline.do_parse(&"a,b,c,d", 0).fold(
+        |(_,b), _, _| b.len() + 1,
+        |_, _| panic!("Parse error")
+    ));
 }

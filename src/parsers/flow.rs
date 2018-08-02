@@ -7,7 +7,7 @@ use parsers::response::*;
 
 pub struct Seq<A, B> { p1: Parsec<A>, p2: Parsec<B> }
 
-impl<A, B> ParserTrait<(A, B)> for And<A, B> {
+impl<A, B> ParserTrait<(A, B)> for Seq<A, B> {
     fn do_parse(&self, s: &str, o: usize) -> Response<(A, B)> {
         match self.p1.do_parse(s, o) {
             Response::Success(a1, i1, b1) => {
@@ -22,8 +22,8 @@ impl<A, B> ParserTrait<(A, B)> for And<A, B> {
 }
 
 #[inline]
-pub fn seq<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> And<A, B> {
-    And { p1, p2 }
+pub fn seq<A, B>(p1: Parsec<A>, p2: Parsec<B>) -> Seq<A, B> {
+    Seq { p1, p2 }
 }
 
 #[macro_export]
@@ -114,12 +114,7 @@ pub fn optrep<A>(p: Parsec<A>) -> Repeat<A> {
 
 #[macro_export]
 macro_rules! optrep {
-    ( $p:expr ) => {
-        optrep(Box::new($p))
-    };
-    ( $($p:expr),+ ) => {
-        optrep!(seq!($($p),*))
-    };
+    ( $($p:expr),+ ) => { optrep(Box::new(seq!($($p),*))) };
 }
 
 #[inline]
@@ -129,27 +124,17 @@ pub fn rep<A>(p: Parsec<A>) -> Repeat<A> {
 
 #[macro_export]
 macro_rules! rep {
-    ( $p:expr ) => {
-        rep(Box::new($p))
-    };
-    ( $($p:expr),+ ) => {
-        rep!(seq!($($p),*))
-    };
-
+    ( $($p:expr),+ ) => { rep(Box::new(seq!($($p),*))) };
 }
 
 // -------------------------------------------------------------------------------------------------
 
 #[macro_export]
 macro_rules! take_while {
-    ( $x:expr ) => {
-        optrep!(do_try!(satisfy!(any(), $x)))
-    };
+    ( $x:expr ) => { optrep!(do_try!(satisfy!(any(), $x))) };
 }
 
 #[macro_export]
 macro_rules! take_one {
-    ( $x:expr ) => {
-        do_try!(satisfy!(any(), $x))
-    };
+    ( $x:expr ) => { do_try!(satisfy!(any(), $x)) };
 }
