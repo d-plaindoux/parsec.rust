@@ -28,7 +28,7 @@ structure (`struct`) and an implementation of this previous `Trait`.
 module `parsecute::parsers::core`
 
 ```rust
-returns :: A  -> Parser<char> where A: Copy
+returns :: A  -> Parser<A> where A: Copy
 fails   :: () -> Parser<A>
 any     :: () -> Parser<char>
 eos     :: () -> Parser<()>
