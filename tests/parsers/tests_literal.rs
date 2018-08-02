@@ -113,9 +113,9 @@ fn it_parse_extracting_natural() {
 }
 
 #[test]
-fn it_parse_extracting_cvs_items() {
+fn it_parse_extracting_csv_items() {
     let item = || take_while!(|c| *c != ',');
-    let csvline = seq!(item(), optrep!(fmap!(|(_,b)| b, seq!(',' , item()))));
+    let csvline = seq!(item(), optrep!(fmap!(|(_,b)| b, ',' , item())));
 
     assert_eq!(4, csvline.do_parse(&"a,b,c,d", 0).fold(
         |(_,b), _, _| b.len() + 1,
