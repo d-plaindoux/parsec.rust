@@ -35,6 +35,7 @@ eos     :: () -> Parser<()>
 ```
 
 ```rust
+satisfy!   :: Parser<A> -> (Fn(&A) -> bool) -> Parser<A>
 do_try!    :: Parser<A> -> Parser<A>
 lookahead! :: Parser<A> -> Parser<A>
 ```
@@ -45,7 +46,7 @@ module `parsecute::parsers::monadics`
 
 ```rust
 fmap! :: (Fn(A) -> B) -> Parser<A> -> Parser<B>
-bind! :: (Fn(A> -> Box<Parser<B>>) -> Parser<A> -> Parser<B>
+bind! :: (Fn(A) -> Box<Parser<B>) -> Parser<A> -> Parser<B>
 ```
 
 ### Flow
@@ -53,11 +54,13 @@ bind! :: (Fn(A> -> Box<Parser<B>>) -> Parser<A> -> Parser<B>
 module `parsecute::parsers::flow`
 
 ```rust
-seq!    :: Parser<A> -> Parser<B> -> Parser<(A,B)>
-or!     :: Parser<A> -> Parser<A> -> Parser<A>
-opt!    :: Parser<A> -> Parser<Option<A>>
-optrep! :: Parser<A> -> Parser<Vec<A>>
-rep!    :: Parser<A> -> Parser<Vec<A>>
+seq!        :: Parser<A> -> Parser<B> -> Parser<(A,B)>
+or!         :: Parser<A> -> Parser<A> -> Parser<A>
+opt!        :: Parser<A> -> Parser<Option<A>>
+optrep!     :: Parser<A> -> Parser<Vec<A>>
+rep!        :: Parser<A> -> Parser<Vec<A>>
+take_while! :: (Fn(&char) -> bool) -> Parser<Vec<char>>
+take_one!   :: (Fn(&char) -> bool) -> Parser<Option<char>>
 ```
 
 ## Literals
