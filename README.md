@@ -14,8 +14,8 @@ implementation from scratch in [Rust](https://www.rust-lang.org/en-US/).
 // item    ::= [^,]*
 // csvline ::= item (',' item)*
 
-let item = || take_while!(|c| *c != ',');
-let csvline = seq!(item(), optrep!(',', item()));
+let item    = || take_while!(|c| *c != ',');
+let csvline = seq!(item(), optrep!(fmap!(|_,b| b, ',', item())));
 ```
 
 # License

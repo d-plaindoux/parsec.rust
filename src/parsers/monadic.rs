@@ -28,9 +28,7 @@ pub fn join<A>(p: Parsec<Parsec<A>>) -> Join<A> {
 
 #[macro_export]
 macro_rules! join {
-    ( $x:expr ) => {
-        join(Box::new($x))
-    };
+    ( $x:expr ) => { join(Box::new($x)) };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -53,9 +51,7 @@ pub fn fmap<A, B>(f: Box<Fn(A) -> B>, p: Parsec<A>) -> FMap<A, B> {
 
 #[macro_export]
 macro_rules! fmap {
-    ( $f:expr , $x:expr ) => {
-        fmap(Box::new($f), Box::new($x))
-    };
+    ( $f:expr , $($p:expr),+ ) => { fmap(Box::new($f), Box::new(seq!($($p),+))) };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -83,7 +79,5 @@ pub fn bind<A, B>(f: Box<Fn(A) -> Parsec<B>>, p: Parsec<A>) -> Bind<A, B> {
 
 #[macro_export]
 macro_rules! bind {
-    ( $f:expr , $p:expr ) => {
-        bind(Box::new($f), Box::new($p))
-    };
+    ( $f:expr , $($p:expr),+ ) => { bind(Box::new($f), Box::new(seq!($($p),+))) };
 }
