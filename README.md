@@ -20,8 +20,8 @@ pub trait Parser<A> {
 }
 ```
 
-Since the Parser size is not known Rust does not allow the Trait type to be returned and used as is. For this reason each parser is implemented by a specific
-structure (`struct`) and an implementation of this previous `Trait`.
+Since the Parser size is not known Rust does not allow the Trait type to be returned and used as is. For this reason each parser is denoted by a specific
+structure (`struct`) and the corresponding `Parser` trait implementation.
 
 ## Basic parsers
 
