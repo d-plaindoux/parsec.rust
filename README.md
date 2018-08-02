@@ -8,6 +8,54 @@
 A [parser combinator library](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf)
 implementation from scratch in [Rust](https://www.rust-lang.org/en-US/).
 
+# Basic parsers & Macros
+
+## Core definition
+
+A parser is a trait providing a `do_parse method.
+
+```rust
+pub trait Parser<A> {
+    fn do_parse(&self, s: &str, o: usize) -> Response<A>;
+}
+```
+
+## Basic parsers
+
+```rust
+returns :: A  -> Parser<char> where A: Copy
+fails   :: () -> Parser<A>
+any     :: () -> Parser<char>
+eos     :: () -> Parser<()>
+```
+
+## Macros
+
+### Basic
+
+```rust
+do_try!    :: Parser<A> -> Parser<A>
+lookahead! :: Parser<A> -> Parser<A>
+```
+
+### Monadic
+
+```rust
+fmap!      :: (Fn(A) -> B) -> Parser<A> -> Parser<B>
+bind!      :: (Fn(A> -> Box<Parser<B>>) -> Parser<A> -> Parser<B>
+```
+
+### Flow
+
+```rust
+seq!       :: Parser<A> -> Parser<B> -> Parser<(A,B)>
+or!        :: Parser<A> -> Parser<A> -> Parser<A>
+opt!       :: Parser<A> -> Parser<Option<A>>
+optrep!    :: Parser<A> -> Parser<Vec<A>>
+rep!       :: Parser<A> -> Parser<Vec<A>>
+```
+
+
 # Example
 
 ```rust

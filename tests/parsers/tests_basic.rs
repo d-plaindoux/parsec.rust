@@ -23,16 +23,6 @@ fn it_parse_with_returns_no_consumed() {
 }
 
 #[test]
-fn it_parse_with_fails() {
-    let r = fails();
-
-    assert_eq!(0, r.do_parse(&"a", 0).fold(
-        |_: u32, _, _| panic!("Parse error"),
-        |_, _| 0,
-    ));
-}
-
-#[test]
 fn it_parse_with_fails_no_consumed() {
     let r = fails();
 
@@ -49,6 +39,36 @@ fn it_parse_with_any_success() {
     assert_eq!('a', r.do_parse(&"a", 0).fold(
         |a, _, _| a,
         |_, _| panic!("Parse error"),
+    ));
+}
+
+#[test]
+fn it_parse_with_any_reject() {
+    let r = any();
+
+    assert_eq!(false, r.do_parse(&"", 0).fold(
+        |_, _, _| panic!("Parse error"),
+        |_, b| b,
+    ));
+}
+
+#[test]
+fn it_parse_with_eos_success() {
+    let r = eos();
+
+    assert_eq!((), r.do_parse(&"", 0).fold(
+        |a, _, _| a,
+        |_, _| panic!("Parse error"),
+    ));
+}
+
+#[test]
+fn it_parse_with_eos_reject() {
+    let r = eos();
+
+    assert_eq!(false, r.do_parse(&"a", 0).fold(
+        |_, _, _| panic!("Parse error"),
+        |_, b| b,
     ));
 }
 

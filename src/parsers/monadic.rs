@@ -5,34 +5,6 @@ use parsers::response::*;
 // Monadic
 // -------------------------------------------------------------------------------------------------
 
-pub struct Join<A> { p: Parsec<Parsec<A>> } // How this Box of Box can be simplified ?
-
-impl<A> ParserTrait<A> for Join<A> {
-    fn do_parse(&self, s: &str, o: usize) -> Response<A> {
-        match self.p.do_parse(s, o) {
-            Response::Success(a1, i1, b1) => {
-                match a1.do_parse(s, i1) {
-                    Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
-                    Response::Reject(i2, b2) => Response::Reject(i2, b1 || b2),
-                }
-            }
-            Response::Reject(i1, b1) => Response::Reject(i1, b1)
-        }
-    }
-}
-
-#[inline]
-pub fn join<A>(p: Parsec<Parsec<A>>) -> Join<A> {
-    Join { p }
-}
-
-#[macro_export]
-macro_rules! join {
-    ( $x:expr ) => { join(Box::new($x)) };
-}
-
-// -------------------------------------------------------------------------------------------------
-
 pub struct FMap<A, B> { f: Box<Fn(A) -> B>, p: Parsec<A> } // Can we remove this Box
 
 impl<A, B> ParserTrait<B> for FMap<A, B> {
