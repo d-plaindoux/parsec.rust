@@ -1,153 +1,97 @@
-use parsers::core::*;
+use parsers::core::Executable;
 use parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------
-// Core
+// Parser type definition
 // -------------------------------------------------------------------------------------------------
 
-pub struct Returns<A> { a: A }
+pub struct Return<E>(pub E);
 
-impl<A> ParserTrait<A> for Returns<A> where A: Copy {
-    fn do_parse(&self, _: &str, o: usize) -> Response<A> {
-        Response::Success(self.a, o, false)
+pub struct Fail();
+
+pub struct Any();
+
+pub struct Eos();
+
+pub struct Try<E>(pub E);
+
+pub struct Lookahead<E>(pub E);
+
+// -------------------------------------------------------------------------------------------------
+// Parser execution
+// -------------------------------------------------------------------------------------------------
+
+impl<A> Executable<A> for Return<A>
+    where A: Copy
+{
+    fn execute(&self, _: &str, o: usize) -> Response<A> {
+        let Return(v) = self;
+
+        Response::Success(v.clone(), o, false)
     }
 }
 
-#[inline]
-pub fn returns<A>(a: A) -> Returns<A> {
-    return Returns { a };
-}
-
 // -------------------------------------------------------------------------------------------------
 
-pub struct Fails;
-
-impl<A> ParserTrait<A> for Fails {
-    fn do_parse(&self, _: &str, o: usize) -> Response<A> {
-        return Response::Reject(o, false);
+impl<A> Executable<A> for Fail
+{
+    fn execute(&self, _: &str, o: usize) -> Response<A> {
+        Response::Reject(o, false)
     }
 }
 
-#[inline]
-pub fn fails() -> Fails {
-    return Fails {};
-}
-
 // -------------------------------------------------------------------------------------------------
 
-pub struct Eos;
-
-impl ParserTrait<()> for Eos {
-    fn do_parse(&self, s: &str, o: usize) -> Response<()> {
-        if o < s.len() {
-            return Response::Reject(o, false);
-        }
-
-        return Response::Success((), o, true);
-    }
-}
-
-#[inline]
-pub fn eos() -> Eos {
-    return Eos {};
-}
-
-// -------------------------------------------------------------------------------------------------
-
-pub struct Any;
-
-impl ParserTrait<char> for Any {
-    fn do_parse(&self, s: &str, o: usize) -> Response<char> {
+impl Executable<char> for Any
+{
+    fn execute(&self, s: &str, o: usize) -> Response<char> {
         if o >= s.len() {
             return Response::Reject(o, false);
         }
 
-        return Response::Success(s[o..(o + 1)].chars().next().unwrap(), o + 1, true);
+        Response::Success(s[o..(o + 1)].chars().next().unwrap(), o + 1, true)
     }
-}
-
-#[inline]
-pub fn any() -> Any {
-    return Any {};
 }
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Try<A> { p: Parsec<A> }
-
-impl<A> ParserTrait<A> for Try<A> {
-    fn do_parse(&self, s: &str, o: usize) -> Response<A> {
-        match self.p.do_parse(s, o) {
-            Response::Reject(i, _) => Response::Reject(i, false),
-            r => r
+impl Executable<()> for Eos
+{
+    fn execute(&self, s: &str, o: usize) -> Response<()> {
+        if o < s.len() {
+            return Response::Reject(o, false);
         }
+
+        Response::Success((), o, false)
     }
-}
-
-#[inline]
-pub fn try<A>(p: Parsec<A>) -> Try<A> {
-    Try { p }
-}
-
-#[macro_export]
-macro_rules! do_try {
-    ( $x:expr ) => {
-        try(Box::new($x))
-    };
 }
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Satisfy<A> { p: Parsec<A>, c: Box<Fn(&A) -> bool> }
+impl<A, E> Executable<A> for Try<E> where E: Executable<A>
+{
+    fn execute(&self, s: &str, o: usize) -> Response<A> {
+        let Try(p) = self;
 
-impl<A> ParserTrait<A> for Satisfy<A> {
-    fn do_parse(&self, s: &str, o: usize) -> Response<A> {
-        match self.p.do_parse(s, o) {
-            Response::Success(a, i, b) => {
-                if (self.c)(&a) {
-                    Response::Success(a, i, b)
-                } else {
-                    Response::Reject(i, b)
-                }
-            }
-            r => r,
+        match p.execute(s, o) {
+            Response::Reject(o, _) => Response::Reject(o, false),
+            other => other
         }
     }
-}
-
-#[inline]
-pub fn satisfy<A>(p: Parsec<A>, c: Box<Fn(&A) -> bool>) -> Satisfy<A> {
-    Satisfy { p, c }
-}
-
-#[macro_export]
-macro_rules! satisfy {
-    ( $p:expr, $c:expr ) => {
-        satisfy(Box::new($p), Box::new($c))
-    };
 }
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Lookahead<A> { p: Parsec<A> }
+impl<A, E> Executable<A> for Lookahead<E> where E: Executable<A>
+{
+    fn execute(&self, s: &str, o: usize) -> Response<A> {
+        let Lookahead(p) = self;
 
-impl<A> ParserTrait<A> for Lookahead<A> {
-    fn do_parse(&self, s: &str, o: usize) -> Response<A> {
-        match self.p.do_parse(s, o) {
-            Response::Success(a, _, b) => Response::Success(a, o, b),
-            _ => Response::Reject(o, false),
+        match p.execute(s, o) {
+            Response::Success(v, _, _) => Response::Success(v, o, false),
+            other => other
         }
     }
 }
 
-#[inline]
-pub fn lookahead<A>(p: Parsec<A>) -> Lookahead<A> {
-    Lookahead { p }
-}
-
-#[macro_export]
-macro_rules! lookahead {
-    ( $x:expr ) => {
-        lookahead(Box::new($x))
-    };
-}
+// -------------------------------------------------------------------------------------------------
