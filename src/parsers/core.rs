@@ -1,5 +1,4 @@
 use parsers::response::*;
-use std::marker::PhantomData;
 
 pub trait Parser<A> {}
 
