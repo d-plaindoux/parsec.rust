@@ -61,10 +61,10 @@ pub fn rep<E, A>(p: E) -> Repeat<E, A> where E: Parser<A> {
 
 //  -------------------------------------------------------------------------------------------------
 
-pub trait RepeatOperation<E, A> where E:Parser<A> {
+pub trait RepeatOperation<E, A> where E: Parser<A> {
     fn opt(self) -> Or<FMap<E, A, Option<A>>, Return<Option<A>>, Option<A>>;
-    fn rep(self) -> Repeat<E,A>;
-    fn optrep(self) -> Repeat<E,A>;
+    fn rep(self) -> Repeat<E, A>;
+    fn optrep(self) -> Repeat<E, A>;
 }
 
 impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
@@ -79,6 +79,20 @@ impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
     fn optrep(self) -> Repeat<E, A> {
         optrep(self)
     }
+}
+
+//  -------------------------------------------------------------------------------------------------
+
+pub type TypeWhile = Repeat<Satisfy<Try<Any, char>, char>, char>;
+
+pub fn take_while(f: Box<(Fn(&char) -> bool)>) -> TypeWhile {
+    optrep(do_try(any()).satisfy(f))
+}
+
+pub type TakeOne = Satisfy<Try<Any, char>, char>;
+
+pub fn take_one(f: Box<(Fn(&char) -> bool)>) -> TakeOne {
+    do_try(any()).satisfy(f)
 }
 
 // -------------------------------------------------------------------------------------------------

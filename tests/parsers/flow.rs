@@ -3,7 +3,6 @@ extern crate parsecute;
 use parsecute::parsers::basic::*;
 use parsecute::parsers::core::*;
 use parsecute::parsers::flow::*;
-use parsecute::parsers::monadic::*;
 use parsecute::parsers::response::*;
 
 #[test]
@@ -98,12 +97,12 @@ fn it_parse_with_rep_reject_empty() {
         |_, b| b,
     ));
 }
-/*
+
 #[test]
 fn it_parse_with_take_while() {
-    let r = take_while!(|a| *a != 'b');
+    let r = take_while(Box::new(|a| *a != 'b'));
 
-    assert_eq!(true, r.do_parse(&"aaaab", 0).fold(
+    assert_eq!(true, r.execute(&"aaaab", 0).fold(
         |r: Vec<char>, _, _| r.len() == 4,
         |_, _| panic!("Parse error"),
     ));
@@ -111,9 +110,9 @@ fn it_parse_with_take_while() {
 
 #[test]
 fn it_parse_with_take_while_empty() {
-    let r = take_while!(|a| *a != 'b');
+    let r = take_while(Box::new(|a| *a != 'b'));
 
-    assert_eq!(true, r.do_parse(&"b", 0).fold(
+    assert_eq!(true, r.execute(&"b", 0).fold(
         |r: Vec<char>, _, _| r.len() == 0,
         |_, _| panic!("Parse error"),
     ));
@@ -121,11 +120,10 @@ fn it_parse_with_take_while_empty() {
 
 #[test]
 fn it_parse_with_take_while_consumed() {
-    let r = take_while!(|a| *a != 'b');
+    let r = take_while(Box::new(|a| *a != 'b'));
 
-    assert_eq!(true, r.do_parse(&"aaaab", 0).fold(
+    assert_eq!(true, r.execute(&"aaaab", 0).fold(
         |_, _, b| b,
         |_, _| panic!("Parse error"),
     ));
 }
-*/

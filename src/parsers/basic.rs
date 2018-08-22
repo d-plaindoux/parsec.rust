@@ -75,6 +75,16 @@ pub fn satisfy<E, A>(p: E, f: Box<Fn(&A) -> bool>) -> Satisfy<E, A> where E: Par
     Satisfy(p, f)
 }
 
+pub trait SatisfyOperation<E, A> where E: Parser<A> {
+    fn satisfy(self, f: Box<Fn(&A) -> bool>) -> Satisfy<E, A>;
+}
+
+impl<E, A> SatisfyOperation<E, A> for E where E: Parser<A> {
+    fn satisfy(self, f: Box<(Fn(&A) -> bool)>) -> Satisfy<E, A> {
+        satisfy(self, f)
+    }
+}
+
 // -------------------------------------------------------------------------------------------------
 // Parser execution
 // -------------------------------------------------------------------------------------------------

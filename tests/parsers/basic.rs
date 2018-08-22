@@ -1,7 +1,6 @@
 use parsecute::parsers::basic::*;
 use parsecute::parsers::core::*;
 use parsecute::parsers::response::*;
-use std::marker::PhantomData;
 
 #[test]
 fn it_parse_with_returns() {
