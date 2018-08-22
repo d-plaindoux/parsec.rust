@@ -1,5 +1,7 @@
 use parsers::response::*;
 
-pub trait Executable<A> {
+pub trait Parser<A> {}
+
+pub trait Executable<A> where Self: Parser<A> {
     fn execute(&self, s: &str, o: usize) -> Response<A>;
 }

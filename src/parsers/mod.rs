@@ -7,4 +7,7 @@ pub mod core;
 pub mod basic;
 
 #[macro_use]
+pub mod monadic;
+
+#[macro_use]
 pub mod flow;
