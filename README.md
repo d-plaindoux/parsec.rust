@@ -12,12 +12,10 @@ implementation from scratch in [Rust](https://www.rust-lang.org/en-US/).
 
 ## Core definition
 
-A parser is a trait providing a `do_parse` method. In short this can be specified by the following `Trait`.
+A parser is specified by the following `Trait`.
 
 ```rust
-pub trait Parser<A> {
-    fn do_parse(&self, s: &str, o: usize) -> Response<A>;
-}
+pub trait Parser<A> {}
 ```
 
 Since the Parser size is not known Rust does not allow the Trait type to be returned and used as is. For this reason each parser is denoted by a specific
