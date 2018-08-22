@@ -45,8 +45,8 @@ lookahead :: Parser<A> -> Parser<A>
 module `parsecute::parsers::monadics`
 
 ```rust
-fmap :: (Fn(A) -> B) -> Parser<A> -> Parser<B>
-bind :: (Fn(A) -> Box<Parser<B>) -> Parser<A> -> Parser<B>
+fmap :: Box<(Fn(A) -> B)> -> Parser<A> -> Parser<B>
+bind :: Box<(Fn(A) -> Parser<B>)> -> Parser<A> -> Parser<B>
 ```
 
 ### Flow
