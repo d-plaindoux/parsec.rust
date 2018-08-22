@@ -29,15 +29,15 @@ module `parsecute::parsers::core`
 
 ```rust
 returns :: A  -> Parser<A> where A: Copy
-fails   :: () -> Parser<A>
+fail    :: () -> Parser<A>
 any     :: () -> Parser<char>
 eos     :: () -> Parser<()>
 ```
 
 ```rust
-satisfy!   :: Parser<A> -> (Fn(&A) -> bool) -> Parser<A>
-do_try!    :: Parser<A> -> Parser<A>
-lookahead! :: Parser<A> -> Parser<A>
+satisfy   :: Parser<A> -> (Fn(&A) -> bool) -> Parser<A>
+do_try    :: Parser<A> -> Parser<A>
+lookahead :: Parser<A> -> Parser<A>
 ```
 
 ### Monadic 
@@ -45,8 +45,8 @@ lookahead! :: Parser<A> -> Parser<A>
 module `parsecute::parsers::monadics`
 
 ```rust
-fmap! :: (Fn(A) -> B) -> Parser<A> -> Parser<B>
-bind! :: (Fn(A) -> Box<Parser<B>) -> Parser<A> -> Parser<B>
+fmap :: (Fn(A) -> B) -> Parser<A> -> Parser<B>
+bind :: (Fn(A) -> Box<Parser<B>) -> Parser<A> -> Parser<B>
 ```
 
 ### Flow
@@ -54,13 +54,13 @@ bind! :: (Fn(A) -> Box<Parser<B>) -> Parser<A> -> Parser<B>
 module `parsecute::parsers::flow`
 
 ```rust
-seq!        :: Parser<A> -> Parser<B> -> Parser<(A,B)>
-or!         :: Parser<A> -> Parser<A> -> Parser<A>
-opt!        :: Parser<A> -> Parser<Option<A>>
-optrep!     :: Parser<A> -> Parser<Vec<A>>
-rep!        :: Parser<A> -> Parser<Vec<A>>
-take_while! :: (Fn(&char) -> bool) -> Parser<Vec<char>>
-take_one!   :: (Fn(&char) -> bool) -> Parser<Option<char>>
+then       :: Parser<A> -> Parser<B> -> Parser<(A,B)>
+or         :: Parser<A> -> Parser<A> -> Parser<A>
+opt        :: Parser<A> -> Parser<Option<A>>
+optrep     :: Parser<A> -> Parser<Vec<A>>
+rep        :: Parser<A> -> Parser<Vec<A>>
+take_while :: (Fn(&char) -> bool) -> Parser<Vec<char>>
+take_one   :: (Fn(&char) -> bool) -> Parser<Option<char>>
 ```
 
 ## Literals
@@ -81,10 +81,10 @@ char_delim   :: () -> Parser<char>
 
 ```rust
 // item    ::= [^,]*
-// csvline ::= item (',' item)*
+// line ::= item (',' item)*
 
-let item    = || take_while!(|c| *c != ',');
-let csvline = seq!(item(), optrep!(fmap!(|_,b| b, ',', item())));
+let atom = || take_while(Box::new(|c| *c != ','));
+let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
 ```
 
 # License
