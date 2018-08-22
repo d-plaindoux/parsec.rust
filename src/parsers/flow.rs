@@ -59,6 +59,28 @@ pub fn rep<E, A>(p: E) -> Repeat<E, A> where E: Parser<A> {
     Repeat(false, p, PhantomData)
 }
 
+//  -------------------------------------------------------------------------------------------------
+
+pub trait RepeatOperation<E, A> where E:Parser<A> {
+    fn opt(self) -> Or<FMap<E, A, Option<A>>, Return<Option<A>>, Option<A>>;
+    fn rep(self) -> Repeat<E,A>;
+    fn optrep(self) -> Repeat<E,A>;
+}
+
+impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
+    fn opt(self) -> Or<FMap<E, A, Option<A>>, Return<Option<A>>, Option<A>> {
+        opt(self)
+    }
+
+    fn rep(self) -> Repeat<E, A> {
+        rep(self)
+    }
+
+    fn optrep(self) -> Repeat<E, A> {
+        optrep(self)
+    }
+}
+
 // -------------------------------------------------------------------------------------------------
 // Parser execution
 // -------------------------------------------------------------------------------------------------

@@ -38,7 +38,7 @@ fn it_parse_with_or_reject() {
 
 #[test]
 fn it_parse_with_opt_success() {
-    let r = opt(any());
+    let r = any().opt();
 
     assert_eq!(Some('a'), r.execute(&"a", 0).fold(
         |a, _, _| a,
@@ -69,7 +69,7 @@ fn it_parse_with_optrep_success() {
 
 #[test]
 fn it_parse_with_optrep_success_empty() {
-    let r = optrep(any());
+    let r = any().optrep();
 
     assert_eq!(0, r.execute(&"", 0).fold(
         |a, _, _| a.len(),
@@ -79,7 +79,7 @@ fn it_parse_with_optrep_success_empty() {
 
 #[test]
 fn it_parse_with_rep_success() {
-    let r = rep(any());
+    let r = any().rep();
 
     let s = 1024 * 1024;
 
