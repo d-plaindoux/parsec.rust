@@ -1,6 +1,7 @@
 use core::marker::PhantomData;
 use parsers::basic::*;
 use parsers::execution::*;
+use parsers::monadic::*;
 use parsers::parser::*;
 use parsers::response::*;
 
@@ -30,11 +31,19 @@ impl<E, A, R, B> Parser<(A, B)> for And<E, A, R, B> where E: Parser<A>, R: Parse
 
 pub trait AndOperation<E, A, R, B> where E: Parser<A>, R: Parser<B> {
     fn then(self, R) -> And<E, A, R, B>;
+    fn then_left(self, b: R) -> FMap<And<E, A, R, B>, (A, B), A>;
+    fn then_right(self, b: R) -> FMap<And<E, A, R, B>, (A, B), B>;
 }
 
 impl<E, A, R, B> AndOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B> {
     fn then(self, b: R) -> And<E, A, R, B> {
         And(self, b, PhantomData, PhantomData)
+    }
+    fn then_left(self, b: R) -> FMap<And<E, A, R, B>, (A, B), A> {
+        And(self, b, PhantomData, PhantomData).fmap(Box::new(|(a, _)| a))
+    }
+    fn then_right(self, b: R) -> FMap<And<E, A, R, B>, (A, B), B> {
+        And(self, b, PhantomData, PhantomData).fmap(Box::new(|(_, b)| b))
     }
 }
 

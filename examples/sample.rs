@@ -1,10 +1,10 @@
 extern crate parsecute;
 
-use parsecute::parsers::execution::*;
-use parsecute::parsers::response::*;
 use parsecute::parsers::basic::*;
+use parsecute::parsers::execution::*;
 use parsecute::parsers::flow::*;
 use parsecute::parsers::monadic::*;
+use parsecute::parsers::response::*;
 
 fn main() {
     let p = any().then(any()).fmap(Box::new(|_| 1));

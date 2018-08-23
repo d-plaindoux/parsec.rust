@@ -36,11 +36,11 @@ pub fn letter() -> TakeOne {
 pub fn float() -> Parsec<f32> {
     let p = opt('+'.or('-'))
         .then(digit().rep())
-        .then(opt('.'.then(digit().rep())))
+        .then(opt('.'.then_right(digit().rep())))
         .fmap(Box::new(|((a, b), c)| {
             let mut number = b.into_iter().collect::<String>();
 
-            if let Some((_, v)) = c {
+            if let Some(v) = c {
                 number.push_str(".");
                 number.push_str(&v.into_iter().collect::<String>());
             };
@@ -58,18 +58,17 @@ pub fn float() -> Parsec<f32> {
 
 pub fn string_delim() -> Parsec<String> {
     let p = '"'.
-        then("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c != '"'))).optrep())
-        .then('"')
-        .fmap(Box::new(|((_, b), _)| b.into_iter().collect::<String>()));
+        then_right("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c != '"'))).optrep())
+        .then_left('"')
+        .fmap(Box::new(|b| b.into_iter().collect::<String>()));
 
     parsec(Box::new(p))
 }
 
 pub fn char_delim() -> Parsec<char> {
     let p = '\''
-        .then("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\''))))
-        .then('\'')
-        .fmap(Box::new(|((_, b), _)| b));
+        .then_right("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\''))))
+        .then_left('\'');
 
     parsec(Box::new(p))
 }
