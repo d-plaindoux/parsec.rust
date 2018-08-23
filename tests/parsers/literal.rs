@@ -78,8 +78,8 @@ fn it_parse_with_digit() {
 }
 
 #[test]
-fn it_parse_with_natural() {
-    assert_eq!(-1024.32, natural().execute(&"-1024.32", 0).fold(
+fn it_parse_with_float() {
+    assert_eq!(-1024.32, float().execute(&"-1024.32", 0).fold(
         |a, _, _| a,
         |_, _| panic!("Parse error"),
     ));
@@ -102,18 +102,8 @@ fn it_parse_with_delimited_char() {
 }
 
 #[test]
-fn it_parse_extracting_natural() {
-    let p = "Hello<".to_string().then(natural()).then('>').fmap(Box::new(|((_,b,),_)| b));
-
-    assert_eq!(42f32, p.execute(&"Hello<42>", 0).fold(
-        |a, _, _| a,
-        |_, _| panic!("Parse error")
-    ));
-}
-
-#[test]
 fn it_parse_extracting_float() {
-    let p = "Hello<".to_string().then(natural()).then('>').fmap(Box::new(|((_,b,),_)| b));
+    let p = "Hello<".to_string().then(float()).then('>').fmap(Box::new(|((_,b,),_)| b));
 
     assert_eq!(42f32, p.execute(&"Hello<42>", 0).fold(
         |a, _, _| a,

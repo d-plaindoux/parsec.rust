@@ -31,7 +31,7 @@ pub fn letter() -> TakeOne {
     }))
 }
 
-pub fn natural() -> Parsec<f32> {
+pub fn float() -> Parsec<f32> {
     let p = opt('+'.or('-'))
         .then(digit().rep())
         .then(opt('.'.then(digit().rep())))
