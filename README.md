@@ -26,16 +26,16 @@ structure (`struct`) and the corresponding `Parser` trait implementation.
 module `parsecute::parsers::core`
 
 ```rust
-returns :: A  -> Parser<A> where A: Copy
-fail    :: () -> Parser<A>
-any     :: () -> Parser<char>
-eos     :: () -> Parser<()>
+pub fn returns<A>(v: A) -> Return<A>
+pub fn fail() -> Fail
+pub fn any() -> Any
+pub fn eos() -> Eos
 ```
 
 ```rust
-satisfy   :: Parser<A> -> (Fn(&A) -> bool) -> Parser<A>
-do_try    :: Parser<A> -> Parser<A>
-lookahead :: Parser<A> -> Parser<A>
+pub fn satisfy<E, A>(p: E, f: Box<Fn(&A) -> bool>) -> Satisfy<E, A> where E: Parser<A>
+pub fn do_try<E, A>(p: E) -> Try<E, A> where E: Parser<A>
+pub fn lookahead<E, A>(p: E) -> Lookahead<E, A> where E: Parser<A>
 ```
 
 ### Monadic 
@@ -43,8 +43,8 @@ lookahead :: Parser<A> -> Parser<A>
 module `parsecute::parsers::monadics`
 
 ```rust
-fmap :: Box<(Fn(A) -> B)> -> Parser<A> -> Parser<B>
-bind :: Box<(Fn(A) -> Parser<B>)> -> Parser<A> -> Parser<B>
+fn fmap(self, f: Box<(Fn(A) -> B)>) -> FMap<E, A, B> where Self: Parser<A>
+fn bind(self, f: Box<(Fn(A) -> R)>) -> Bind<E, A, R, B> where Self: Parser<A>
 ```
 
 ### Flow
