@@ -70,7 +70,7 @@ module `parsecute::parsers::literals`
 ```rust
 digit        :: () -> Parser<char>
 letter       :: () -> Parser<char>
-natural      :: () -> Parser<i32>
+natural      :: () -> Parser<f32>
 string_delim :: () -> Parser<String>
 char_delim   :: () -> Parser<char>
 ```
