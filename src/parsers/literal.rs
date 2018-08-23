@@ -55,7 +55,8 @@ pub fn natural() -> Parsec<f32> {
 }
 
 pub fn string_delim() -> Parsec<String> {
-    let p = '"'.then("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c != '"'))).optrep())
+    let p = '"'.
+        then("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c != '"'))).optrep())
         .then('"')
         .fmap(Box::new(|((_, b), _)| b.into_iter().collect::<String>()));
 
@@ -63,7 +64,8 @@ pub fn string_delim() -> Parsec<String> {
 }
 
 pub fn char_delim() -> Parsec<char> {
-    let p = '\''.then("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\''))))
+    let p = '\''
+        .then("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\''))))
         .then('\'')
         .fmap(Box::new(|((_, b), _)| b));
 
