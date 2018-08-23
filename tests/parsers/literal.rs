@@ -1,6 +1,6 @@
 extern crate parsecute;
 
-use parsecute::parsers::core::*;
+use parsecute::parsers::execution::*;
 use parsecute::parsers::flow::*;
 use parsecute::parsers::literal::*;
 use parsecute::parsers::monadic::*;

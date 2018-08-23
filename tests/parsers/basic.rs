@@ -1,5 +1,5 @@
 use parsecute::parsers::basic::*;
-use parsecute::parsers::core::*;
+use parsecute::parsers::execution::*;
 use parsecute::parsers::response::*;
 
 #[test]

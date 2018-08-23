@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
 use parsers::basic::*;
-use parsers::core::Executable;
-use parsers::core::Parser;
+use parsers::execution::*;
+use parsers::parser::*;
 use parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------

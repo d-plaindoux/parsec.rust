@@ -1,5 +1,6 @@
 use parsers::basic::*;
-use parsers::core::*;
+use parsers::parser::*;
+use parsers::execution::*;
 use parsers::flow::*;
 use parsers::monadic::*;
 use parsers::response::Response;
@@ -40,7 +41,7 @@ pub fn float() -> Parsec<f32> {
 
             if let Some((_, v)) = c {
                 number.push_str(".");
-                number.push_str( & v.into_iter().collect:: < String>());
+                number.push_str(&v.into_iter().collect::<String>());
             };
 
             let result = number.parse::<f32>().unwrap();
