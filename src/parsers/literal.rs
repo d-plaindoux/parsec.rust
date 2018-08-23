@@ -3,7 +3,6 @@ use parsers::core::*;
 use parsers::flow::*;
 use parsers::monadic::*;
 use parsers::response::Response;
-use std::prelude::v1::Vec;
 
 //  -------------------------------------------------------------------------------------------------
 // Parser type definition
@@ -32,33 +31,43 @@ pub fn letter() -> TakeOne {
     }))
 }
 
-type Natural = FMap<And<Or<FMap<Or<char, char, char>, char, Option<char>>, Return<Option<char>>, Option<char>>, Option<char>, Repeat<Satisfy<Try<Any, char>, char>, char>, Vec<char>>, (Option<char>, Vec<char>), i32>;
+pub fn natural() -> Parsec<f32> {
+    let p = opt('+'.or('-'))
+        .then(digit().rep())
+        .then(opt('.'.then(digit().rep())))
+        .fmap(Box::new(|((a, b), c)| {
+            let mut number = b.into_iter().collect::<String>();
 
-pub fn natural() -> Natural {
-    opt('+'.or('-')).then(digit().rep()).fmap(Box::new(|(a, b): (Option<char>, Vec<char>)| {
-        let result = b.into_iter().collect::<String>().parse::<i32>().unwrap();
+            if let Some((_, v)) = c {
+                number.push_str(".");
+                number.push_str( & v.into_iter().collect:: < String>());
+            };
 
-        match a {
-            Some('-') => -1 * result,
-            _ => result
-        }
-    }))
+            let result = number.parse::<f32>().unwrap();
+
+            match a {
+                Some('-') => -1f32 * result,
+                _ => result
+            }
+        }));
+
+    parsec(Box::new(p))
 }
 
-pub type DelimitedString = FMap<And<And<char, char, Repeat<Or<FMap<String, String, char>, Satisfy<Try<Any, char>, char>, char>, char>, Vec<char>>, (char, Vec<char>), char, char>, ((char, Vec<char>), char), String>;
-
-pub fn string_delim() -> DelimitedString {
-    '"'.then("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c != '"'))).optrep())
+pub fn string_delim() -> Parsec<String> {
+    let p = '"'.then("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c != '"'))).optrep())
         .then('"')
-        .fmap(Box::new(|((_, b), _): ((char, Vec<char>), char)| b.into_iter().collect::<String>()))
+        .fmap(Box::new(|((_, b), _)| b.into_iter().collect::<String>()));
+
+    parsec(Box::new(p))
 }
 
-pub type DelimitedChar = FMap<And<And<char, char, Or<FMap<String, String, char>, Satisfy<Try<Any, char>, char>, char>, char>, (char, char), char, char>, ((char, char), char), char>;
-
-pub fn char_delim() -> DelimitedChar {
-    '\''.then("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\''))))
+pub fn char_delim() -> Parsec<char> {
+    let p = '\''.then("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\''))))
         .then('\'')
-        .fmap(Box::new(|((_, b), _): ((char, char), char)| b))
+        .fmap(Box::new(|((_, b), _)| b));
+
+    parsec(Box::new(p))
 }
 
 // -------------------------------------------------------------------------------------------------

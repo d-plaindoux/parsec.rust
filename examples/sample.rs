@@ -10,7 +10,7 @@ fn main() {
     let p = any().then(any()).fmap(Box::new(|_| 1));
 
     match p.execute("ab", 0) {
-        Response::Reject(_, _) => println!("Ouch"),
-        Response::Success(_, _, _) => println!("All done"),
+        Response::Success(1, 2, true) => println!("All done"),
+        _ => println!("Ouch"),
     }
 }

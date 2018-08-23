@@ -2,7 +2,6 @@ use core::marker::PhantomData;
 use parsers::basic::*;
 use parsers::core::Executable;
 use parsers::core::Parser;
-use parsers::monadic::*;
 use parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------
@@ -41,8 +40,12 @@ impl<E, A, R, B> AndOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B>
 
 // -------------------------------------------------------------------------------------------------
 
-pub fn opt<E, A>(p: E) -> Or<FMap<E, A, Option<A>>, Return<Option<A>>, Option<A>> where E: Parser<A> {
-    p.fmap(Box::new(|a| Some(a))).or(returns(None))
+pub struct Opt<E, A>(E, PhantomData<A>) where E: Parser<A>;
+
+impl<E, A> Parser<Option<A>> for Opt<E, A> where E: Parser<A> {}
+
+pub fn opt<E, A>(p: E) -> Opt<E, A> where E: Parser<A> {
+    Opt(p, PhantomData)
 }
 
 //  -------------------------------------------------------------------------------------------------
@@ -62,13 +65,13 @@ pub fn rep<E, A>(p: E) -> Repeat<E, A> where E: Parser<A> {
 //  -------------------------------------------------------------------------------------------------
 
 pub trait RepeatOperation<E, A> where E: Parser<A> {
-    fn opt(self) -> Or<FMap<E, A, Option<A>>, Return<Option<A>>, Option<A>>;
+    fn opt(self) -> Opt<E, A>;
     fn rep(self) -> Repeat<E, A>;
     fn optrep(self) -> Repeat<E, A>;
 }
 
 impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
-    fn opt(self) -> Or<FMap<E, A, Option<A>>, Return<Option<A>>, Option<A>> {
+    fn opt(self) -> Opt<E, A> {
         opt(self)
     }
 
@@ -135,6 +138,22 @@ impl<E, A, R, B> Executable<(A, B)> for And<E, A, R, B>
                 }
             }
             Response::Reject(i1, b1) => Response::Reject(i1, b1)
+        }
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+impl<E, A> Executable<Option<A>> for Opt<E, A>
+    where E: Executable<A> + Parser<A>
+{
+    fn execute(&self, s: &str, o: usize) -> Response<Option<A>> {
+        let Opt(p, _) = self;
+
+        match p.execute(s, o) {
+            Response::Success(a, o, b) => Response::Success(Some(a), o, b),
+            Response::Reject(_, false) => Response::Success(None, o, false),
+            Response::Reject(o, true) => Response::Reject(o, true)
         }
     }
 }
