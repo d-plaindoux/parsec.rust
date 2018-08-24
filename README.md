@@ -57,8 +57,8 @@ or         :: Parser<A> -> Parser<A> -> Parser<A>
 opt        :: Parser<A> -> Parser<Option<A>>
 optrep     :: Parser<A> -> Parser<Vec<A>>
 rep        :: Parser<A> -> Parser<Vec<A>>
-take_while :: (Fn(&u8) -> bool) -> Parser<Vec<u8>>
-take_one   :: (Fn(&u8) -> bool) -> Parser<Option<u8>>
+take_while :: Box<(Fn(&u8) -> bool)> -> Parser<Vec<u8>>
+take_one   :: Box<(Fn(&u8) -> bool)> -> Parser<Option<u8>>
 ```
 
 ## Literals
