@@ -33,7 +33,7 @@ eos     :: () -> Parser<()>
 ```
 
 ```rust
-satisfy   :: Parser<A> -> Box<(Fn(&A) -> bool)> -> Parser<A>
+satisfy   :: self:Parser<A> -> Box<(Fn(&A) -> bool)> -> Parser<A>
 do_try    :: Parser<A> -> Parser<A>
 lookahead :: Parser<A> -> Parser<A>
 ```
@@ -43,8 +43,8 @@ lookahead :: Parser<A> -> Parser<A>
 module `parsecute::parsers::monadics`
 
 ```rust
-fmap :: Box<(Fn(A) -> B)> -> Parser<A> -> Parser<B>
-bind :: Box<(Fn(A) -> Parser<B>)> -> Parser<A> -> Parser<B>
+fmap :: self:Parser<A> -> Box<(Fn(A) -> B)> -> Parser<B>
+bind :: self:Parser<A> -> Box<(Fn(A) -> Parser<B>)> -> Parser<B>
 ```
 
 ### Flow
@@ -52,11 +52,11 @@ bind :: Box<(Fn(A) -> Parser<B>)> -> Parser<A> -> Parser<B>
 module `parsecute::parsers::flow`
 
 ```rust
-then       :: Parser<A> -> Parser<B> -> Parser<(A,B)>
-or         :: Parser<A> -> Parser<A> -> Parser<A>
-opt        :: Parser<A> -> Parser<Option<A>>
-optrep     :: Parser<A> -> Parser<Vec<A>>
-rep        :: Parser<A> -> Parser<Vec<A>>
+then       :: self:Parser<A> -> Parser<B> -> Parser<(A,B)>
+or         :: self:Parser<A> -> Parser<A> -> Parser<A>
+opt        :: self:Parser<A> -> Parser<Option<A>>
+optrep     :: self:Parser<A> -> Parser<Vec<A>>
+rep        :: self:Parser<A> -> Parser<Vec<A>>
 take_while :: Box<(Fn(&u8) -> bool)> -> Parser<Vec<u8>>
 take_one   :: Box<(Fn(&u8) -> bool)> -> Parser<Option<u8>>
 ```
