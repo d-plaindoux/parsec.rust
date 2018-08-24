@@ -8,7 +8,7 @@ use parsecute::parsers::response::*;
 fn main() {
     let p = any().rep();
 
-    let s = "a".repeat(1024 * 1024 * 256);
+    let s = "a".repeat(1024 * 1024 * 500);
 
     println!("Start parsing ...");
 

@@ -12,6 +12,7 @@ pub struct FMap<E, A, B>(E, Box<Fn(A) -> B>) where E: Parser<A>;
 impl<E, A, B> Parser<B> for FMap<E, A, B> where E: Parser<A> {}
 
 pub trait FMapOperation<E, A, B> where E: Parser<A> {
+    #[inline]
     fn fmap(self, f: Box<(Fn(A) -> B)>) -> FMap<E, A, B>;
 }
 
@@ -28,6 +29,7 @@ pub struct Bind<E, A, R, B>(E, Box<Fn(A) -> R>, PhantomData<B>) where E: Parser<
 impl<E, A, R, B> Parser<B> for Bind<E, A, R, B> where E: Parser<A>, R: Parser<B> {}
 
 pub trait BindOperation<E, A, R, B> where E: Parser<A>, R: Parser<B> {
+    #[inline]
     fn bind(self, f: Box<(Fn(A) -> R)>) -> Bind<E, A, R, B>;
 }
 

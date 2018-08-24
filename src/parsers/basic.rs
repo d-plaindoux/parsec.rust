@@ -21,6 +21,7 @@ pub struct Fail();
 
 impl<E> Parser<E> for Fail {}
 
+#[inline]
 pub fn fail() -> Fail {
     return Fail();
 }
@@ -31,6 +32,7 @@ pub struct Any();
 
 impl Parser<u8> for Any {}
 
+#[inline]
 pub fn any() -> Any {
     return Any();
 }
@@ -41,15 +43,18 @@ pub struct Eos();
 
 impl Parser<()> for Eos {}
 
+#[inline]
 pub fn eos() -> Eos {
     return Eos();
 }
+
 // -------------------------------------------------------------------------------------------------
 
 pub struct Try<E, A>(pub E, pub PhantomData<A>) where E: Parser<A>;
 
 impl<E, A> Parser<A> for Try<E, A> where E: Parser<A> {}
 
+#[inline]
 pub fn do_try<E, A>(p: E) -> Try<E, A> where E: Parser<A> {
     Try(p, PhantomData)
 }
@@ -60,6 +65,7 @@ pub struct Lookahead<E, A>(pub E, pub PhantomData<A>) where E: Parser<A>;
 
 impl<E, A> Parser<A> for Lookahead<E, A> where E: Parser<A> {}
 
+#[inline]
 pub fn lookahead<E, A>(p: E) -> Lookahead<E, A> where E: Parser<A> {
     Lookahead(p, PhantomData)
 }
@@ -70,6 +76,7 @@ pub struct Lazy<E, A>(pub Box<Fn() -> E>, pub PhantomData<A>) where E: Parser<A>
 
 impl<E, A> Parser<A> for Lazy<E, A> where E: Parser<A> {}
 
+#[inline]
 pub fn lazy<E, A>(p: Box<Fn() -> E>) -> Lazy<E, A> where E: Parser<A> {
     Lazy(p, PhantomData)
 }
@@ -80,15 +87,18 @@ pub struct Satisfy<E, A>(pub E, pub Box<Fn(&A) -> bool>) where E: Parser<A>;
 
 impl<E, A> Parser<A> for Satisfy<E, A> where E: Parser<A> {}
 
+#[inline]
 pub fn satisfy<E, A>(p: E, f: Box<Fn(&A) -> bool>) -> Satisfy<E, A> where E: Parser<A> {
     Satisfy(p, f)
 }
 
 pub trait SatisfyOperation<E, A> where E: Parser<A> {
+    #[inline]
     fn satisfy(self, f: Box<Fn(&A) -> bool>) -> Satisfy<E, A>;
 }
 
 impl<E, A> SatisfyOperation<E, A> for E where E: Parser<A> {
+    #[inline]
     fn satisfy(self, f: Box<(Fn(&A) -> bool)>) -> Satisfy<E, A> {
         satisfy(self, f)
     }
@@ -99,6 +109,7 @@ impl<E, A> SatisfyOperation<E, A> for E where E: Parser<A> {
 // -------------------------------------------------------------------------------------------------
 
 impl<A> Executable<A> for Return<A> where A: Copy {
+    #[inline]
     fn execute(&self, _: &[u8], o: usize) -> Response<A> {
         let Return(v) = self;
 
@@ -109,6 +120,7 @@ impl<A> Executable<A> for Return<A> where A: Copy {
 // -------------------------------------------------------------------------------------------------
 
 impl<A> Executable<A> for Fail {
+    #[inline]
     fn execute(&self, _: &[u8], o: usize) -> Response<A> {
         Response::Reject(o, false)
     }
@@ -117,6 +129,7 @@ impl<A> Executable<A> for Fail {
 // -------------------------------------------------------------------------------------------------
 
 impl Executable<u8> for Any {
+    #[inline]
     fn execute(&self, s: &[u8], o: usize) -> Response<u8> {
         if o < s.len() {
             return Response::Success(s[o], o + 1, true);
@@ -129,6 +142,7 @@ impl Executable<u8> for Any {
 // -------------------------------------------------------------------------------------------------
 
 impl Executable<()> for Eos {
+    #[inline]
     fn execute(&self, s: &[u8], o: usize) -> Response<()> {
         if o < s.len() {
             return Response::Reject(o, false);
@@ -141,6 +155,7 @@ impl Executable<()> for Eos {
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Try<E, A> where E: Executable<A> + Parser<A> {
+    #[inline]
     fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Try(p, _) = self;
 
@@ -154,6 +169,7 @@ impl<A, E> Executable<A> for Try<E, A> where E: Executable<A> + Parser<A> {
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Lookahead<E, A> where E: Executable<A> + Parser<A> {
+    #[inline]
     fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Lookahead(p, _) = self;
 

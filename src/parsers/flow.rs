@@ -18,6 +18,7 @@ pub trait OrOperation<E, R, A> where E: Parser<A>, R: Parser<A> {
 }
 
 impl<E, R, A> OrOperation<E, R, A> for E where E: Parser<A>, R: Parser<A> {
+    #[inline]
     fn or(self, a: R) -> Or<E, R, A> {
         Or(self, a, PhantomData)
     }
@@ -36,12 +37,15 @@ pub trait AndOperation<E, A, R, B> where E: Parser<A>, R: Parser<B> {
 }
 
 impl<E, A, R, B> AndOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B> {
+    #[inline]
     fn then(self, b: R) -> And<E, A, R, B> {
         And(self, b, PhantomData, PhantomData)
     }
+    #[inline]
     fn then_left(self, b: R) -> FMap<And<E, A, R, B>, (A, B), A> {
         And(self, b, PhantomData, PhantomData).fmap(Box::new(|(a, _)| a))
     }
+    #[inline]
     fn then_right(self, b: R) -> FMap<And<E, A, R, B>, (A, B), B> {
         And(self, b, PhantomData, PhantomData).fmap(Box::new(|(_, b)| b))
     }
@@ -53,6 +57,7 @@ pub struct Opt<E, A>(E, PhantomData<A>) where E: Parser<A>;
 
 impl<E, A> Parser<Option<A>> for Opt<E, A> where E: Parser<A> {}
 
+#[inline]
 pub fn opt<E, A>(p: E) -> Opt<E, A> where E: Parser<A> {
     Opt(p, PhantomData)
 }
@@ -63,10 +68,12 @@ pub struct Repeat<E, A>(bool, E, PhantomData<A>) where E: Parser<A>;
 
 impl<E, A> Parser<Vec<A>> for Repeat<E, A> where E: Parser<A> {}
 
+#[inline]
 pub fn optrep<E, A>(p: E) -> Repeat<E, A> where E: Parser<A> {
     Repeat(true, p, PhantomData)
 }
 
+#[inline]
 pub fn rep<E, A>(p: E) -> Repeat<E, A> where E: Parser<A> {
     Repeat(false, p, PhantomData)
 }
@@ -80,14 +87,17 @@ pub trait RepeatOperation<E, A> where E: Parser<A> {
 }
 
 impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
+    #[inline]
     fn opt(self) -> Opt<E, A> {
         opt(self)
     }
 
+    #[inline]
     fn rep(self) -> Repeat<E, A> {
         rep(self)
     }
 
+    #[inline]
     fn optrep(self) -> Repeat<E, A> {
         optrep(self)
     }
@@ -97,12 +107,14 @@ impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
 
 pub type TypeWhile = Repeat<Satisfy<Try<Any, u8>, u8>, u8>;
 
+#[inline]
 pub fn take_while(f: Box<(Fn(&u8) -> bool)>) -> TypeWhile {
     optrep(do_try(any()).satisfy(f))
 }
 
 pub type TakeOne = Satisfy<Try<Any, u8>, u8>;
 
+#[inline]
 pub fn take_one(f: Box<(Fn(&u8) -> bool)>) -> TakeOne {
     do_try(any()).satisfy(f)
 }
@@ -204,8 +216,10 @@ impl<E, A> Executable<Vec<A>> for Repeat<E, A>
 macro_rules! parser {
     (($l:expr))              => { $l                             };
     (($l:expr) |  $($r:tt)+) => { $l.or(parser!($($r)+))         };
-    (($l:expr) ~  $($r:tt)+) => { $l.then(parser!($($r)+))       };
     (($l:expr) <~ $($r:tt)+) => { $l.then_left(parser!($($r)+))  };
     (($l:expr) ~> $($r:tt)+) => { $l.then_right(parser!($($r)+)) };
+    (($l:expr) ~  $($r:tt)+) => { $l.then(parser!($($r)+))       };
+    (($l:expr) >> ($r:expr)) => { $l.fmap(Box::new($r))          };
 }
 
+// -------------------------------------------------------------------------------------------------

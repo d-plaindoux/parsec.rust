@@ -2,6 +2,7 @@ extern crate parsecute;
 
 use parsecute::parsers::basic::*;
 use parsecute::parsers::execution::*;
+use parsecute::parsers::monadic::*;
 use parsecute::parsers::flow::*;
 use parsecute::parsers::response::*;
 
@@ -130,9 +131,11 @@ fn it_parse_with_take_while_consumed() {
 
 #[test]
 fn it_parse_with_macro_seq() {
-    let r = parser!((any()) <~ (any()) <~ (any()));
+    let r = parser!(
+        (any()) ~> (any()) <~ (any()) >> (|a| a)
+    );
 
-    assert_eq!('a', r.execute(&"abc".as_bytes(), 0).fold(
+    assert_eq!('b', r.execute(&"abc".as_bytes(), 0).fold(
         |a, _, _| a as char,
         |_, _| panic!("Parse error"),
     ));
