@@ -33,7 +33,7 @@ eos     :: () -> Parser<()>
 ```
 
 ```rust
-satisfy   :: Parser<A> -> (Fn(&A) -> bool) -> Parser<A>
+satisfy   :: Parser<A> -> Box<(Fn(&A) -> bool)> -> Parser<A>
 do_try    :: Parser<A> -> Parser<A>
 lookahead :: Parser<A> -> Parser<A>
 ```
