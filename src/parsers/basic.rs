@@ -67,6 +67,16 @@ pub fn lookahead<E, A>(p: E) -> Lookahead<E, A> where E: Parser<A> {
 
 // -------------------------------------------------------------------------------------------------
 
+pub struct Lazy<E, A>(pub Box<Fn() -> E>, pub PhantomData<A>) where E: Parser<A>;
+
+impl<E, A> Parser<A> for Lazy<E, A> where E: Parser<A> {}
+
+pub fn lazy<E, A>(p: Box<Fn() -> E>) -> Lazy<E, A> where E: Parser<A> {
+    Lazy(p, PhantomData)
+}
+
+// -------------------------------------------------------------------------------------------------
+
 pub struct Satisfy<E, A>(pub E, pub Box<Fn(&A) -> bool>) where E: Parser<A>;
 
 impl<E, A> Parser<A> for Satisfy<E, A> where E: Parser<A> {}
@@ -175,3 +185,14 @@ impl<A, E> Executable<A> for Satisfy<E, A> where E: Executable<A> + Parser<A> {
 }
 
 // -------------------------------------------------------------------------------------------------
+
+impl<A, E> Executable<A> for Lazy<E, A> where E: Executable<A> + Parser<A> {
+    fn execute(&self, s: &str, o: usize) -> Response<A> {
+        let Lazy(p, _) = self;
+
+        p().execute(s, o)
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+

@@ -151,3 +151,23 @@ fn it_parse_with_lookahead_any_success_no_unwrap() {
         |_, _| panic!("Parse error"),
     ));
 }
+
+#[test]
+fn it_parse_with_lazy_any_success() {
+    let r = lazy(Box::new(||any()));
+
+    assert_eq!(true, r.execute(&"a", 0).fold(
+        |_, _, b| b,
+        |_, _| panic!("Parse error"),
+    ));
+}
+
+#[test]
+fn it_parse_with_lazy_any_reject() {
+    let r = lazy(Box::new(||any()));
+
+    assert_eq!(false, r.execute(&"", 0).fold(
+        |_, _, _| panic!("Parse error"),
+        |_, b| b,
+    ));
+}
