@@ -28,7 +28,7 @@ module `parsecute::parsers::core`
 ```rust
 returns :: A  -> Parser<A> where A: Copy
 fail    :: () -> Parser<A>
-any     :: () -> Parser<char>
+any     :: () -> Parser<u8>
 eos     :: () -> Parser<()>
 ```
 
@@ -57,8 +57,8 @@ or         :: Parser<A> -> Parser<A> -> Parser<A>
 opt        :: Parser<A> -> Parser<Option<A>>
 optrep     :: Parser<A> -> Parser<Vec<A>>
 rep        :: Parser<A> -> Parser<Vec<A>>
-take_while :: (Fn(&char) -> bool) -> Parser<Vec<char>>
-take_one   :: (Fn(&char) -> bool) -> Parser<Option<char>>
+take_while :: (Fn(&u8) -> bool) -> Parser<Vec<u8>>
+take_one   :: (Fn(&u8) -> bool) -> Parser<Option<u8>>
 ```
 
 ## Literals
@@ -81,7 +81,7 @@ char_delim   :: () -> Parser<char>
 // item    ::= [^,]*
 // line ::= item (',' item)*
 
-let atom = || take_while(Box::new(|c| *c != ','));
+let atom = || take_while(Box::new(|c| *c as char != ','));
 let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
 ```
 
