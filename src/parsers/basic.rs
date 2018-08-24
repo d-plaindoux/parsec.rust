@@ -44,7 +44,6 @@ impl Parser<()> for Eos {}
 pub fn eos() -> Eos {
     return Eos();
 }
-
 // -------------------------------------------------------------------------------------------------
 
 pub struct Try<E, A>(pub E, pub PhantomData<A>) where E: Parser<A>;
@@ -120,7 +119,7 @@ impl<A> Executable<A> for Fail {
 impl Executable<u8> for Any {
     fn execute(&self, s: &[u8], o: usize) -> Response<u8> {
         if o < s.len() {
-            return Response::Success(s[o], o + 1, true)
+            return Response::Success(s[o], o + 1, true);
         }
 
         return Response::Reject(o, false);

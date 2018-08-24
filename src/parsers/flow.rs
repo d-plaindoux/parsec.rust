@@ -199,3 +199,13 @@ impl<E, A> Executable<Vec<A>> for Repeat<E, A>
 }
 
 // -------------------------------------------------------------------------------------------------
+
+#[macro_export]
+macro_rules! parser {
+    (($l:expr))              => { $l                             };
+    (($l:expr) |  $($r:tt)+) => { $l.or(parser!($($r)+))         };
+    (($l:expr) ~  $($r:tt)+) => { $l.then(parser!($($r)+))       };
+    (($l:expr) <~ $($r:tt)+) => { $l.then_left(parser!($($r)+))  };
+    (($l:expr) ~> $($r:tt)+) => { $l.then_right(parser!($($r)+)) };
+}
+

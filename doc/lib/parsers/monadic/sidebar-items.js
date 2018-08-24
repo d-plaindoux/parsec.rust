@@ -1,0 +1,1 @@
+initSidebarItems({"struct": [["Bind", ""], ["FMap", ""]], "trait": [["BindOperation", ""], ["FMapOperation", ""]]});

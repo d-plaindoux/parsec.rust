@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["opt",""],["optrep",""],["rep",""],["take_one",""],["take_while",""]],"struct":[["And",""],["Opt",""],["Or",""],["Repeat",""]],"trait":[["AndOperation",""],["OrOperation",""],["RepeatOperation",""]],"type":[["TakeOne",""],["TypeWhile",""]]});

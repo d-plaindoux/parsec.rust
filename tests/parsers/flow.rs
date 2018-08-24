@@ -113,7 +113,7 @@ fn it_parse_with_take_while_empty() {
     let r = take_while(Box::new(|a| *a as char != 'b'));
 
     assert_eq!(true, r.execute(&"b".as_bytes(), 0).fold(
-        |r: Vec<u8>, _, _| r.len() == 0,
+        |r, _, _| r.len() == 0,
         |_, _| panic!("Parse error"),
     ));
 }
@@ -124,6 +124,16 @@ fn it_parse_with_take_while_consumed() {
 
     assert_eq!(true, r.execute(&"aaaab".as_bytes(), 0).fold(
         |_, _, b| b,
+        |_, _| panic!("Parse error"),
+    ));
+}
+
+#[test]
+fn it_parse_with_macro_seq() {
+    let r = parser!((any()) <~ (any()) <~ (any()));
+
+    assert_eq!('a', r.execute(&"abc".as_bytes(), 0).fold(
+        |a, _, _| a as char,
         |_, _| panic!("Parse error"),
     ));
 }
