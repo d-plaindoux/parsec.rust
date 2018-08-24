@@ -44,7 +44,7 @@ impl<E, A, R, B> BindOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B
 impl<E, A, B> Executable<B> for FMap<E, A, B>
     where E: Executable<A> + Parser<A>
 {
-    fn execute(&self, s: &str, o: usize) -> Response<B> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<B> {
         let FMap(p, f) = self;
 
         match p.execute(s, o) {
@@ -60,7 +60,7 @@ impl<E, A, R, B> Executable<B> for Bind<E, A, R, B>
     where E: Executable<A> + Parser<A>,
           R: Executable<B> + Parser<B>
 {
-    fn execute(&self, s: &str, o: usize) -> Response<B> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<B> {
         let Bind(p, f, _) = self;
 
         match p.execute(s, o) {

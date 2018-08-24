@@ -19,7 +19,7 @@ pub fn parsec<A>(p: Box<Executable<A>>) -> Parsec<A> {
 // -------------------------------------------------------------------------------------------------
 
 impl<A> Executable<A> for Parsec<A> {
-    fn execute(&self, s: &str, o: usize) -> Response<A> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Parsec(e) = self;
 
         e.execute(s, o)

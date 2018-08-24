@@ -95,15 +95,15 @@ impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
 
 //  -------------------------------------------------------------------------------------------------
 
-pub type TypeWhile = Repeat<Satisfy<Try<Any, char>, char>, char>;
+pub type TypeWhile = Repeat<Satisfy<Try<Any, u8>, u8>, u8>;
 
-pub fn take_while(f: Box<(Fn(&char) -> bool)>) -> TypeWhile {
+pub fn take_while(f: Box<(Fn(&u8) -> bool)>) -> TypeWhile {
     optrep(do_try(any()).satisfy(f))
 }
 
-pub type TakeOne = Satisfy<Try<Any, char>, char>;
+pub type TakeOne = Satisfy<Try<Any, u8>, u8>;
 
-pub fn take_one(f: Box<(Fn(&char) -> bool)>) -> TakeOne {
+pub fn take_one(f: Box<(Fn(&u8) -> bool)>) -> TakeOne {
     do_try(any()).satisfy(f)
 }
 
@@ -115,7 +115,7 @@ impl<E, R, A> Executable<A> for Or<E, R, A>
     where E: Executable<A> + Parser<A>,
           R: Executable<A> + Parser<A>
 {
-    fn execute(&self, s: &str, o: usize) -> Response<A> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Or(p1, p2, _) = self;
 
         match p1.execute(s, o) {
@@ -136,7 +136,7 @@ impl<E, A, R, B> Executable<(A, B)> for And<E, A, R, B>
     where E: Executable<A> + Parser<A>,
           R: Executable<B> + Parser<B>
 {
-    fn execute(&self, s: &str, o: usize) -> Response<(A, B)> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<(A, B)> {
         let And(p1, p2, _, _) = self;
 
         match p1.execute(s, o) {
@@ -156,7 +156,7 @@ impl<E, A, R, B> Executable<(A, B)> for And<E, A, R, B>
 impl<E, A> Executable<Option<A>> for Opt<E, A>
     where E: Executable<A> + Parser<A>
 {
-    fn execute(&self, s: &str, o: usize) -> Response<Option<A>> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<Option<A>> {
         let Opt(p, _) = self;
 
         match p.execute(s, o) {
@@ -172,15 +172,14 @@ impl<E, A> Executable<Option<A>> for Opt<E, A>
 impl<E, A> Executable<Vec<A>> for Repeat<E, A>
     where E: Executable<A> + Parser<A>
 {
-    fn execute(&self, s: &str, o: usize) -> Response<Vec<A>> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<Vec<A>> {
         let Repeat(opt, p, _) = self;
 
         let mut result: Vec<A> = Vec::with_capacity(13);
         let mut offset = o;
         let mut consumed = false;
-        let mut parsed = true;
 
-        while parsed {
+        loop {
             match p.execute(s, offset) {
                 Response::Success(a1, i1, b1) => {
                     result.push(a1);
@@ -188,16 +187,14 @@ impl<E, A> Executable<Vec<A>> for Repeat<E, A>
                     consumed = consumed || b1;
                 }
                 _ => {
-                    parsed = false;
+                    if *opt || result.len() > 0 {
+                        return Response::Success(result, offset, consumed);
+                    }
+
+                    return Response::Reject(offset, consumed);
                 }
             }
         }
-
-        if *opt || result.len() > 0 {
-            return Response::Success(result, offset, consumed);
-        }
-
-        return Response::Reject(offset, consumed);
     }
 }
 

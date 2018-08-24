@@ -29,7 +29,7 @@ pub fn fail() -> Fail {
 
 pub struct Any();
 
-impl Parser<char> for Any {}
+impl Parser<u8> for Any {}
 
 pub fn any() -> Any {
     return Any();
@@ -100,7 +100,7 @@ impl<E, A> SatisfyOperation<E, A> for E where E: Parser<A> {
 // -------------------------------------------------------------------------------------------------
 
 impl<A> Executable<A> for Return<A> where A: Copy {
-    fn execute(&self, _: &str, o: usize) -> Response<A> {
+    fn execute(&self, _: &[u8], o: usize) -> Response<A> {
         let Return(v) = self;
 
         Response::Success(v.clone(), o, false)
@@ -110,27 +110,27 @@ impl<A> Executable<A> for Return<A> where A: Copy {
 // -------------------------------------------------------------------------------------------------
 
 impl<A> Executable<A> for Fail {
-    fn execute(&self, _: &str, o: usize) -> Response<A> {
+    fn execute(&self, _: &[u8], o: usize) -> Response<A> {
         Response::Reject(o, false)
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-impl Executable<char> for Any {
-    fn execute(&self, s: &str, o: usize) -> Response<char> {
-        if o >= s.len() {
-            return Response::Reject(o, false);
+impl Executable<u8> for Any {
+    fn execute(&self, s: &[u8], o: usize) -> Response<u8> {
+        if o < s.len() {
+            return Response::Success(s[o], o + 1, true)
         }
 
-        Response::Success(s[o..(o + 1)].chars().next().unwrap(), o + 1, true)
+        return Response::Reject(o, false);
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 
 impl Executable<()> for Eos {
-    fn execute(&self, s: &str, o: usize) -> Response<()> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<()> {
         if o < s.len() {
             return Response::Reject(o, false);
         }
@@ -142,7 +142,7 @@ impl Executable<()> for Eos {
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Try<E, A> where E: Executable<A> + Parser<A> {
-    fn execute(&self, s: &str, o: usize) -> Response<A> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Try(p, _) = self;
 
         match p.execute(s, o) {
@@ -155,7 +155,7 @@ impl<A, E> Executable<A> for Try<E, A> where E: Executable<A> + Parser<A> {
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Lookahead<E, A> where E: Executable<A> + Parser<A> {
-    fn execute(&self, s: &str, o: usize) -> Response<A> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Lookahead(p, _) = self;
 
         match p.execute(s, o) {
@@ -168,7 +168,7 @@ impl<A, E> Executable<A> for Lookahead<E, A> where E: Executable<A> + Parser<A> 
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Satisfy<E, A> where E: Executable<A> + Parser<A> {
-    fn execute(&self, s: &str, o: usize) -> Response<A> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Satisfy(p, c) = self;
 
         match p.execute(s, o) {
@@ -187,7 +187,7 @@ impl<A, E> Executable<A> for Satisfy<E, A> where E: Executable<A> + Parser<A> {
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Lazy<E, A> where E: Executable<A> + Parser<A> {
-    fn execute(&self, s: &str, o: usize) -> Response<A> {
+    fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Lazy(p, _) = self;
 
         p().execute(s, o)

@@ -6,5 +6,5 @@ use parsers::response::*;
 // -------------------------------------------------------------------------------------------------
 
 pub trait Executable<A> where Self: Parser<A> {
-    fn execute(&self, s: &str, o: usize) -> Response<A>;
+    fn execute(&self, s: &[u8], o: usize) -> Response<A>;
 }
