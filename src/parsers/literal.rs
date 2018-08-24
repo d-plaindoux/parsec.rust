@@ -62,7 +62,7 @@ pub fn float() -> Parsec<f32> {
 
 pub fn string_delim() -> Parsec<String> {
     let p = '"'.
-        then_right("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c as char != '"')).fmap(Box::new(|a| a as char))).optrep())
+        then_right("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c != '"' as u8)).fmap(Box::new(|a| a as char))).optrep())
         .then_left('"')
         .fmap(Box::new(|b| b.into_iter().collect::<String>()));
 
@@ -71,7 +71,7 @@ pub fn string_delim() -> Parsec<String> {
 
 pub fn char_delim() -> Parsec<char> {
     let p = '\''
-        .then_right("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c as char != '\'')).fmap(Box::new(|a| a as char))))
+        .then_right("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\'' as u8)).fmap(Box::new(|a| a as char))))
         .then_left('\'');
 
     parsec(Box::new(p))

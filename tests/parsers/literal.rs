@@ -112,7 +112,7 @@ fn it_parse_extracting_float() {
 
 #[test]
 fn it_parse_extracting_csv_items() {
-    let atom = || take_while(Box::new(|c| *c as char != ','));
+    let atom = || take_while(Box::new(|c| *c != ',' as u8));
     let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
 
     assert_eq!(4, line.execute(&"a,b,c,d".as_bytes(), 0).fold(

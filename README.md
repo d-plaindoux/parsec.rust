@@ -81,7 +81,7 @@ char_delim   :: () -> Parser<char>
 // item    ::= [^,]*
 // line ::= item (',' item)*
 
-let atom = || take_while(Box::new(|c| *c as char != ','));
+let atom = || take_while(Box::new(|c| *c != ',' as u8));
 let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
 ```
 

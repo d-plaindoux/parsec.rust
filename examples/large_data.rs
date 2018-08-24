@@ -4,7 +4,6 @@ use parsecute::parsers::basic::*;
 use parsecute::parsers::execution::*;
 use parsecute::parsers::flow::*;
 use parsecute::parsers::response::*;
-use parsecute::parsers::literal::string_delim;
 
 fn main() {
     let p = any().rep();
