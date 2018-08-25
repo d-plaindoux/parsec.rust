@@ -155,7 +155,6 @@ impl Executable<()> for Eos {
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Try<E, A> where E: Executable<A> + Parser<A> {
-    #[inline]
     fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Try(p, _) = self;
 
@@ -169,7 +168,6 @@ impl<A, E> Executable<A> for Try<E, A> where E: Executable<A> + Parser<A> {
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Lookahead<E, A> where E: Executable<A> + Parser<A> {
-    #[inline]
     fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Lookahead(p, _) = self;
 
@@ -202,6 +200,7 @@ impl<A, E> Executable<A> for Satisfy<E, A> where E: Executable<A> + Parser<A> {
 // -------------------------------------------------------------------------------------------------
 
 impl<A, E> Executable<A> for Lazy<E, A> where E: Executable<A> + Parser<A> {
+    #[inline]
     fn execute(&self, s: &[u8], o: usize) -> Response<A> {
         let Lazy(p, _) = self;
 
