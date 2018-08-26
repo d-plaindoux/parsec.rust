@@ -78,7 +78,7 @@ char_delim   :: () -> Parser<char>
 # Example
 
 ```rust
-// item    ::= [^,]*
+// item ::= [^,]*
 // line ::= item (',' item)*
 
 let atom = || take_while(Box::new(|c| *c != ',' as u8));
