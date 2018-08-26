@@ -86,7 +86,7 @@ fn it_parse_with_float() {
 
 #[test]
 fn it_parse_with_delimited_string() {
-    assert_eq!("1024", string_delim().execute(&"\"1024\"".as_bytes(), 0).fold(
+    assert_eq!("1024", delimited_string().execute(&"\"1024\"".as_bytes(), 0).fold(
         |a, _, _| a,
         |_, _| panic!("Parse error"),
     ));
@@ -94,7 +94,7 @@ fn it_parse_with_delimited_string() {
 
 #[test]
 fn it_parse_with_delimited_char() {
-    assert_eq!('a', char_delim().execute(&"'a'".as_bytes(), 0).fold(
+    assert_eq!('a', delimited_char().execute(&"'a'".as_bytes(), 0).fold(
         |a, _, _| a,
         |_, _| panic!("Parse error"),
     ));

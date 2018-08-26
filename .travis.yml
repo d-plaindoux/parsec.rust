@@ -2,3 +2,4 @@ language: rust
 script:
 - cargo build --verbose --all
 - cargo test --verbose --all
+- time cargo run --release --example large_data

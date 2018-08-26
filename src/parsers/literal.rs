@@ -60,7 +60,7 @@ pub fn float() -> Parsec<f32> {
     parsec(Box::new(p))
 }
 
-pub fn string_delim() -> Parsec<String> {
+pub fn delimited_string() -> Parsec<String> {
     let p = '"'.
         then_right("\\\"".to_string().fmap(Box::new(|_| '\"')).or(take_one(Box::new(|c| *c != '"' as u8)).fmap(Box::new(|a| a as char))).optrep())
         .then_left('"')
@@ -69,7 +69,7 @@ pub fn string_delim() -> Parsec<String> {
     parsec(Box::new(p))
 }
 
-pub fn char_delim() -> Parsec<char> {
+pub fn delimited_char() -> Parsec<char> {
     let p = '\''
         .then_right("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\'' as u8)).fmap(Box::new(|a| a as char))))
         .then_left('\'');
@@ -93,7 +93,7 @@ impl Executable<u8> for u8 {
 
 impl Executable<char> for char {
     fn execute(&self, s: &[u8], o: usize) -> Response<char> {
-        let r = any().execute(s, o); // TODO unicode to be managed here
+        let r = any().execute(s, o); // TODO utf8 to be managed here
         match r {
             Response::Success(a, o, b) if { *self == a as char } => Response::Success(a as char, o, b),
             _ => Response::Reject(o, false)
@@ -117,7 +117,7 @@ impl Executable<String> for String {
             }
         }
 
-        Response::Success(self.get(o..o + self.len()).unwrap().to_string(), o + self.len(), self.len() > 0)
+        Response::Success(self.clone(), o + self.len(), self.len() > 0)
     }
 }
 
