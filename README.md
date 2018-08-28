@@ -85,6 +85,15 @@ let atom = || take_while(Box::new(|c| *c != ',' as u8));
 let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
 ```
 
+# JSON Benchmark
+
+```
+test basic  ... bench:      10,853 ns/iter (+/- 2,584) = 7 MB/s
+test canada ... bench:     348,430 ns/iter (+/- 58,229) = 26 MB/s
+test apache ... bench:   4,425,182 ns/iter (+/- 420,662) = 28 MB/s
+test data   ... bench:     343,244 ns/iter (+/- 72,412) = 26 MB/s
+```
+
 # License
 
 Copyright 2018 D. Plaindoux.
