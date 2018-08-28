@@ -11,5 +11,5 @@ lto = "fat"
 codegen-units = 1
 
 [[bench]]
-name = "json"
+name = "benchmarks"
 harness = false
