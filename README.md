@@ -91,6 +91,8 @@ let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
 
 ## JSon benches
 
+The benchmarks were run on a 2016 Macbook Pro, quad core 2,7 GHz Intel Core i7.
+
 ```
 test basic  ... bench:      10,853 ns/iter (+/- 2,584) = 7 MB/s
 test canada ... bench:     348,430 ns/iter (+/- 58,229) = 26 MB/s
