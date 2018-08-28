@@ -3,6 +3,13 @@ name = "parsecute"
 version = "0.1.0"
 authors = ["Didier Plaindoux <d.plaindoux@free.fr>"]
 
+[dependencies]
+bencher = "0.1"
+
 [profile.release]
-opt-level = 3
-lto = true
+lto = "fat"
+codegen-units = 1
+
+[[bench]]
+name = "json"
+harness = false

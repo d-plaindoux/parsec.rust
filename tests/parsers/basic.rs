@@ -171,3 +171,23 @@ fn it_parse_with_lazy_any_reject() {
         |_, b| b,
     ));
 }
+
+#[test]
+fn it_parse_with_skip_success() {
+    let r = skip(" \n\r\t".to_string());
+
+    assert_eq!((2, false), r.execute(&" \n".as_bytes(), 0).fold(
+        |_, o, b| (o, b),
+        |_, _| panic!("Parse error"),
+    ));
+}
+
+#[test]
+fn it_parse_with_noskip_success() {
+    let r = skip(" \n\r\t".to_string());
+
+    assert_eq!((0, false), r.execute(&"azerty".as_bytes(), 0).fold(
+        |_, o, b| (o, b),
+        |_, _| panic!("Parse error"),
+    ));
+}

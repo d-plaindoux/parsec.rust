@@ -1,6 +1,6 @@
 use parsers::execution::*;
 use parsers::parser::*;
-use parsers::response::Response;
+use parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------
 // Basic Parser used for type simplification
@@ -12,6 +12,11 @@ impl<A> Parser<A> for Parsec<A> {}
 
 pub fn parsec<A>(p: Box<Executable<A>>) -> Parsec<A> {
     Parsec(p)
+}
+
+#[macro_export]
+macro_rules! parsec {
+    ($e:expr) => { parsec(Box::new($e)) };
 }
 
 // -------------------------------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 pub mod response;
 pub mod parser;
 pub mod execution;
+#[macro_use]
 pub mod core;
 pub mod basic;
 pub mod monadic;

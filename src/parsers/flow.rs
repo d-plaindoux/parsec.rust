@@ -132,10 +132,11 @@ impl<E, R, A> Executable<A> for Or<E, R, A>
 
         match p1.execute(s, o) {
             Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1),
-            Response::Reject(_, b1) => {
-                match p2.execute(s, o) {
-                    Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
-                    Response::Reject(i2, b2) => Response::Reject(i2, b1 || b2)
+            Response::Reject(o, b1) => {
+                if b1 {
+                    Response::Reject(o, b1)
+                } else {
+                    p2.execute(s, o)
                 }
             }
         }
@@ -213,13 +214,19 @@ impl<E, A> Executable<Vec<A>> for Repeat<E, A>
 // -------------------------------------------------------------------------------------------------
 
 #[macro_export]
-macro_rules! parser {
-    (($l:expr))              => { $l                             };
-    (($l:expr) |  $($r:tt)+) => { $l.or(parser!($($r)+))         };
-    (($l:expr) <~ $($r:tt)+) => { $l.then_left(parser!($($r)+))  };
-    (($l:expr) ~> $($r:tt)+) => { $l.then_right(parser!($($r)+)) };
-    (($l:expr) ~  $($r:tt)+) => { $l.then(parser!($($r)+))       };
-    (($l:expr) >> ($r:expr)) => { $l.fmap(Box::new($r))          };
+macro_rules! seq {
+    (($l:expr))              => { $l                          };
+    (($l:expr) <~ $($r:tt)+) => { $l.then_left(seq!($($r)+))  };
+    (($l:expr) ~> $($r:tt)+) => { $l.then_right(seq!($($r)+)) };
+    (($l:expr) ~  $($r:tt)+) => { $l.then(seq!($($r)+))       };
+    (($l:expr) >> $r:expr)   => { $l.fmap(Box::new($r))       };
+}
+
+#[macro_export]
+macro_rules! cases {
+    (($l:expr))              => { $l                          };
+    (($l:expr) |  $($r:tt)+) => { $l.or(cases!($($r)+))       };
+    (($l:expr) >> $r:expr)   => { $l.fmap(Box::new($r))       };
 }
 
 // -------------------------------------------------------------------------------------------------

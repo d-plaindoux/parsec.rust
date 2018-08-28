@@ -72,17 +72,6 @@ pub fn lookahead<E, A>(p: E) -> Lookahead<E, A> where E: Parser<A> {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Lazy<E, A>(pub Box<Fn() -> E>, pub PhantomData<A>) where E: Parser<A>;
-
-impl<E, A> Parser<A> for Lazy<E, A> where E: Parser<A> {}
-
-#[inline]
-pub fn lazy<E, A>(p: Box<Fn() -> E>) -> Lazy<E, A> where E: Parser<A> {
-    Lazy(p, PhantomData)
-}
-
-// -------------------------------------------------------------------------------------------------
-
 pub struct Satisfy<E, A>(pub E, pub Box<Fn(&A) -> bool>) where E: Parser<A>;
 
 impl<E, A> Parser<A> for Satisfy<E, A> where E: Parser<A> {}
@@ -102,6 +91,28 @@ impl<E, A> SatisfyOperation<E, A> for E where E: Parser<A> {
     fn satisfy(self, f: Box<(Fn(&A) -> bool)>) -> Satisfy<E, A> {
         satisfy(self, f)
     }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+pub struct Lazy<E, A>(pub Box<Fn() -> E>, pub PhantomData<A>) where E: Parser<A>;
+
+impl<E, A> Parser<A> for Lazy<E, A> where E: Parser<A> {}
+
+#[inline]
+pub fn lazy<E, A>(p: Box<Fn() -> E>) -> Lazy<E, A> where E: Parser<A> {
+    Lazy(p, PhantomData)
+}
+
+// -------------------------------------------------------------------------------------------------
+
+pub struct Skip(pub String);
+
+impl Parser<()> for Skip {}
+
+#[inline]
+pub fn skip(s: String) -> Skip {
+    Skip(s)
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -205,6 +216,22 @@ impl<A, E> Executable<A> for Lazy<E, A> where E: Executable<A> + Parser<A> {
         let Lazy(p, _) = self;
 
         p().execute(s, o)
+    }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+impl Executable<()> for Skip {
+
+    #[inline]
+    fn execute(&self, s: &[u8], o: usize) -> Response<()> {
+        let Skip(chars) = self;
+        let mut n = o;
+        while n < s.len() && chars.as_bytes().contains(&s[n]) {
+            n += 1;
+        }
+
+        Response::Success((), n , false)
     }
 }
 

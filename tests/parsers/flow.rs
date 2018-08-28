@@ -131,7 +131,7 @@ fn it_parse_with_take_while_consumed() {
 
 #[test]
 fn it_parse_with_macro_seq() {
-    let r = parser!(
+    let r = seq!(
         (any()) ~> (any()) <~ (any()) >> (|a| a)
     );
 
