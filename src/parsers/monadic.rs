@@ -50,8 +50,8 @@ impl<E, A, B> Executable<B> for FMap<E, A, B>
         let FMap(p, f) = self;
 
         match p.execute(s, o) {
-            Response::Reject(o, b) => Response::Reject(o, b),
-            Response::Success(v, o, b) => Response::Success(f(v), o, b)
+            Response::Success(v, o, b) => Response::Success(f(v), o, b),
+            Response::Reject(o, b) => Response::Reject(o, b)
         }
     }
 }

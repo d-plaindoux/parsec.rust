@@ -68,6 +68,15 @@ fn basic_any(b: &mut Bencher) {
 
 // -------------------------------------------------------------------------------------------------
 
+fn basic_skip(b: &mut Bencher) {
+    let string = " \t\n\r".repeat(1024 * 512);
+    let data = string.as_bytes();
+    b.bytes = data.len() as u64;
+    parse(skip(" \t\n\r".to_string()), b, data)
+}
+
+// -------------------------------------------------------------------------------------------------
+
 fn basic_or(b: &mut Bencher) {
     let string = "ab".repeat(1024 * 512);
     let data = string.as_bytes();
@@ -137,7 +146,7 @@ fn parse<E, A>(p: E, b: &mut Bencher, buffer: &[u8]) where E: Executable<A> {
 }
 
 benchmark_group!(benches,
-                 basic_any, basic_or, basic_and, basic_fmap,
+                 basic_any, basic_skip, basic_or, basic_and, basic_fmap,
                  json_basic, json_data, json_canada, json_apache
                 );
 benchmark_main!(benches);

@@ -226,8 +226,10 @@ impl Executable<()> for Skip {
     #[inline]
     fn execute(&self, s: &[u8], o: usize) -> Response<()> {
         let Skip(chars) = self;
+        let bytes = chars.as_bytes();
         let mut n = o;
-        while n < s.len() && chars.as_bytes().contains(&s[n]) {
+
+        while n < s.len() && bytes.contains(&s[n]) {
             n += 1;
         }
 
