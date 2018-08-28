@@ -85,7 +85,11 @@ let atom = || take_while(Box::new(|c| *c != ',' as u8));
 let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
 ```
 
-# JSON Benchmark
+# Benchmarks
+
+[Nom & al. Benchmarks](https://github.com/Geal/parser_benchmarks/tree/master/json)
+
+## JSon benches
 
 ```
 test basic  ... bench:      10,853 ns/iter (+/- 2,584) = 7 MB/s
