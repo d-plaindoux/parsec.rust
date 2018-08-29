@@ -2,6 +2,8 @@
 name = "parsecute"
 version = "0.1.0"
 authors = ["Didier Plaindoux <d.plaindoux@free.fr>"]
+description = "Rust Parser Combinators"
+repository = "https://github.com/d-plaindoux/parsec.rust"
 
 [dependencies]
 bencher = "0.1"
@@ -11,5 +13,10 @@ lto = "fat"
 codegen-units = 1
 
 [[bench]]
-name = "benchmarks"
+name = "basic"
 harness = false
+
+[[bench]]
+name = "json"
+harness = false
+

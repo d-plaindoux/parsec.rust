@@ -123,18 +123,18 @@ pub fn take_one(f: Box<(Fn(&u8) -> bool)>) -> TakeOne {
 // Parser execution
 // -------------------------------------------------------------------------------------------------
 
-impl<E, R, A> Executable<A> for Or<E, R, A>
-    where E: Executable<A> + Parser<A>,
-          R: Executable<A> + Parser<A>
+impl<'a, E, R, A> Executable<'a, A> for Or<E, R, A>
+    where E: Executable<'a, A> + Parser<A>,
+          R: Executable<'a, A> + Parser<A>
 {
-    fn execute(&self, s: &[u8], o: usize) -> Response<A> {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Or(p1, p2, _) = self;
 
         match p1.execute(s, o) {
-            Response::Success(a1, i1, b1) => Response::Success(a1, i1, b1),
-            Response::Reject(o, b1) => {
+            Response(Some(a1), i1, b1) => response(Some(a1), i1, b1),
+            Response(None, o, b1) => {
                 if b1 {
-                    Response::Reject(o, b1)
+                    response(None, o, b1)
                 } else {
                     p2.execute(s, o)
                 }
@@ -145,47 +145,47 @@ impl<E, R, A> Executable<A> for Or<E, R, A>
 
 // -------------------------------------------------------------------------------------------------
 
-impl<E, A, R, B> Executable<(A, B)> for And<E, A, R, B>
-    where E: Executable<A> + Parser<A>,
-          R: Executable<B> + Parser<B>
+impl<'a, E, A, R, B> Executable<'a, (A, B)> for And<E, A, R, B>
+    where E: Executable<'a, A> + Parser<A>,
+          R: Executable<'a, B> + Parser<B>
 {
-    fn execute(&self, s: &[u8], o: usize) -> Response<(A, B)> {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<(A, B)> {
         let And(p1, p2, _, _) = self;
 
         match p1.execute(s, o) {
-            Response::Success(a1, i1, b1) => {
+            Response(Some(a1), i1, b1) => {
                 match p2.execute(s, i1) {
-                    Response::Success(a2, i2, b2) => Response::Success((a1, a2), i2, b1 || b2),
-                    Response::Reject(i2, b2) => Response::Reject(i2, b1 || b2),
+                    Response(Some(a2), i2, b2) => response(Some((a1, a2)), i2, b1 || b2),
+                    Response(None, i2, b2) => response(None, i2, b1 || b2),
                 }
             }
-            Response::Reject(i1, b1) => Response::Reject(i1, b1)
+            Response(None, i1, b1) => response(None, i1, b1)
         }
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-impl<E, A> Executable<Option<A>> for Opt<E, A>
-    where E: Executable<A> + Parser<A>
+impl<'a, E, A> Executable<'a, Option<A>> for Opt<E, A>
+    where E: Executable<'a, A> + Parser<A>
 {
-    fn execute(&self, s: &[u8], o: usize) -> Response<Option<A>> {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<Option<A>> {
         let Opt(p, _) = self;
 
         match p.execute(s, o) {
-            Response::Success(a, o, b) => Response::Success(Some(a), o, b),
-            Response::Reject(_, false) => Response::Success(None, o, false),
-            Response::Reject(o, true) => Response::Reject(o, true)
+            Response(Some(a), o, b) => response(Some(Some(a)), o, b),
+            Response(None, _, false) => response(Some(None), o, false),
+            Response(None, o, true) => response(None, o, true)
         }
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-impl<E, A> Executable<Vec<A>> for Repeat<E, A>
-    where E: Executable<A> + Parser<A>
+impl<'a, E, A> Executable<'a, Vec<A>> for Repeat<E, A>
+    where E: Executable<'a, A> + Parser<A>
 {
-    fn execute(&self, s: &[u8], o: usize) -> Response<Vec<A>> {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<Vec<A>> {
         let Repeat(opt, p, _) = self;
 
         let mut result: Vec<A> = Vec::with_capacity(13);
@@ -194,17 +194,17 @@ impl<E, A> Executable<Vec<A>> for Repeat<E, A>
 
         loop {
             match p.execute(s, offset) {
-                Response::Success(a1, i1, b1) => {
+                Response(Some(a1), i1, b1) => {
                     result.push(a1);
                     offset = i1;
                     consumed = consumed || b1;
                 }
                 _ => {
                     if *opt || result.len() > 0 {
-                        return Response::Success(result, offset, consumed);
+                        return response(Some(result), offset, consumed);
                     }
 
-                    return Response::Reject(offset, consumed);
+                    return response(None, offset, consumed);
                 }
             }
         }

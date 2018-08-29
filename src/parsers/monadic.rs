@@ -43,36 +43,36 @@ impl<E, A, R, B> BindOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B
 // Parser execution
 // -------------------------------------------------------------------------------------------------
 
-impl<E, A, B> Executable<B> for FMap<E, A, B>
-    where E: Executable<A> + Parser<A>
+impl<'a, E, A, B> Executable<'a, B> for FMap<E, A, B>
+    where E: Executable<'a, A> + Parser<A>
 {
-    fn execute(&self, s: &[u8], o: usize) -> Response<B> {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<B> {
         let FMap(p, f) = self;
 
         match p.execute(s, o) {
-            Response::Success(v, o, b) => Response::Success(f(v), o, b),
-            Response::Reject(o, b) => Response::Reject(o, b)
+            Response(Some(v), o, b) => response(Some(f(v)), o, b),
+            Response(None, o, b) => response(None, o, b)
         }
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-impl<E, A, R, B> Executable<B> for Bind<E, A, R, B>
-    where E: Executable<A> + Parser<A>,
-          R: Executable<B> + Parser<B>
+impl<'a, E, A, R, B> Executable<'a, B> for Bind<E, A, R, B>
+    where E: Executable<'a, A> + Parser<A>,
+          R: Executable<'a, B> + Parser<B>
 {
-    fn execute(&self, s: &[u8], o: usize) -> Response<B> {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<B> {
         let Bind(p, f, _) = self;
 
         match p.execute(s, o) {
-            Response::Success(a1, i1, b1) => {
+            Response(Some(a1), i1, b1) => {
                 match f(a1).execute(s, i1) {
-                    Response::Success(a2, i2, b2) => Response::Success(a2, i2, b1 || b2),
-                    Response::Reject(i2, b2) => Response::Reject(i2, b1 || b2),
+                    Response(Some(a2), i2, b2) => response(Some(a2), i2, b1 || b2),
+                    Response(None, i2, b2) => response(None, i2, b1 || b2),
                 }
             }
-            Response::Reject(i1, b1) => Response::Reject(i1, b1)
+            Response(None, i1, b1) => response(None, i1, b1)
         }
     }
 }

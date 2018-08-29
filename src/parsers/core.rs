@@ -6,16 +6,17 @@ use parsers::response::*;
 // Basic Parser used for type simplification
 // -------------------------------------------------------------------------------------------------
 
-pub struct Parsec<A>(pub Box<Executable<A>>);
+pub struct Parsec<'a, A>(pub Box<Executable<'a, A> + 'a>);
 
-impl<A> Parser<A> for Parsec<A> {}
+impl<'a, A> Parser<A> for Parsec<'a, A> {}
 
-pub fn parsec<A>(p: Box<Executable<A>>) -> Parsec<A> {
-    Parsec(p)
+pub fn parsec<'a, A>(p: Box<Executable<'a, A> + 'a>) -> Parsec<'a, A> {
+    Parsec::<'a>(p)
 }
 
 #[macro_export]
 macro_rules! parsec {
+    ($a:expr, $e:expr) => { parsec::<$a>(Box::new($e)) };
     ($e:expr) => { parsec(Box::new($e)) };
 }
 
@@ -23,8 +24,8 @@ macro_rules! parsec {
 // Basic Parser executable implementation
 // -------------------------------------------------------------------------------------------------
 
-impl<A> Executable<A> for Parsec<A> {
-    fn execute(&self, s: &[u8], o: usize) -> Response<A> {
+impl<'a, A> Executable<'a, A> for Parsec<'a, A> {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Parsec(e) = self;
 
         e.execute(s, o)

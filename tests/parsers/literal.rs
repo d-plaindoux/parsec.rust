@@ -1,5 +1,6 @@
 extern crate parsecute;
 
+use parsecute::parsers::data::*;
 use parsecute::parsers::execution::*;
 use parsecute::parsers::flow::*;
 use parsecute::parsers::literal::*;
@@ -87,7 +88,10 @@ fn it_parse_with_float() {
 #[test]
 fn it_parse_with_delimited_string() {
     assert_eq!("1024", delimited_string().execute(&"\"1024\"".as_bytes(), 0).fold(
-        |a, _, _| a,
+        |a, _, _| {
+            let SubString(s, o, n) = a;
+            String::from_utf8_lossy(&s[o + 1..n]).to_string()
+        },
         |_, _| panic!("Parse error"),
     ));
 }
