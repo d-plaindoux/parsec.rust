@@ -162,7 +162,7 @@ impl<'a> Executable<'a, SubString<'a>> for DelimitedString {
             if c == '"' {
                 if not_escaped {
                     //String::from_utf8_lossy(&s[o + 1..n]).to_string()
-                    return response(Some(SubString(s, o, n)), n + 1, true);
+                    return response(Some(SubString(s, o + 1, n)), n + 1, true);
                 }
             }
 

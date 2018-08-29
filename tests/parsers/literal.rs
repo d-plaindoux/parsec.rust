@@ -90,7 +90,7 @@ fn it_parse_with_delimited_string() {
     assert_eq!("1024", delimited_string().execute(&"\"1024\"".as_bytes(), 0).fold(
         |a, _, _| {
             let SubString(s, o, n) = a;
-            String::from_utf8_lossy(&s[o + 1..n]).to_string()
+            String::from_utf8_lossy(&s[o..n]).to_string()
         },
         |_, _| panic!("Parse error"),
     ));
