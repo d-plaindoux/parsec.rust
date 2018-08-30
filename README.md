@@ -137,12 +137,13 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     fn array<'a>() -> Parsec<'a, JsonValue<'a>> {
         let elements = json::<'a>().then(spaces(',').then_right(json::<'a>()).optrep()).opt();
         let parser = '['.then_right(elements).then_left(spaces(']')).fmap(Box::new(|v| {
-            let mut r = Vec::default();
             if let Some((e, v)) = v {
-                r.push(e);
-                for e in v { r.push(e); }
+                let mut r = v;
+                r.insert(0, e);
+                JsonValue::Array(r)
+            } else {
+                JsonValue::Array(Vec::default())
             }
-            JsonValue::Array(r)
         }));
         Parsec::<'a>(Box::new(parser))
     }
@@ -178,9 +179,9 @@ Reference: [Nom & al. Benchmarks](https://github.com/Geal/parser_benchmarks/tree
 
 ```
 test json_apache      ... bench:   2,434,180 ns/iter (+/- 192,180) = 51 MB/s
-test json_basic       ... bench:       3,960 ns/iter (+/- 374) = 19 MB/s
-test json_canada_nom  ... bench:     135,969 ns/iter (+/- 23,376) = 68 MB/s
-test json_data        ... bench:     170,537 ns/iter (+/- 103,725) = 54 MB/s
+test json_basic       ... bench:       3,960 ns/iter (+/- 374) = 20 MB/s
+test json_canada_nom  ... bench:     135,969 ns/iter (+/- 23,376) = 75 MB/s
+test json_data        ... bench:     170,537 ns/iter (+/- 103,725) = 74 MB/s
 ```
 
 ### JSon benches based on Pest data set

@@ -56,14 +56,13 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     fn array<'a>() -> Parsec<'a, JsonValue<'a>> {
         let elements = json::<'a>().then(spaces(',').then_right(json::<'a>()).optrep()).opt();
         let parser = '['.then_right(elements).then_left(spaces(']')).fmap(Box::new(|v| {
-            let mut r = Vec::default();
             if let Some((e, v)) = v {
-                r.push(e);
-                for e in v {
-                    r.push(e);
-                }
+                let mut r = v;
+                r.insert(0, e);
+                JsonValue::Array(r)
+            } else {
+                JsonValue::Array(Vec::default())
             }
-            JsonValue::Array(r)
         }));
         Parsec::<'a>(Box::new(parser))
     }
@@ -147,8 +146,8 @@ fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8]) where E: Executable<
         let buffer = black_box(buffer);
 
         match p.execute(buffer, 0) {
-            Response { v: Some(_), o:_, c:_ } => (),
-            Response { v: None, o, c:_ } => panic!("unable parse stream at character {}", o),
+            Response { v: Some(_), o: _, c: _ } => (),
+            Response { v: None, o, c: _ } => panic!("unable parse stream at character {}", o),
         }
     });
 }
