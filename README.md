@@ -186,7 +186,7 @@ test json_data        ... bench:     170,537 ns/iter (+/- 103,725) = 74 MB/s
 
 ### JSon benches based on Pest data set
 
-Reference: [Pest & al. Benchmarks](https://github.com/Geal/parser_benchmarks/tree/master/json)
+Reference: [Pest & al. Benchmarks](https://github.com/pest-parser/pest)
 
 ```
 test json_canada_pest ... bench:  97,576,631 ns/iter (+/- 41,502,590) = 23 MB/s
