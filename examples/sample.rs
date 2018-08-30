@@ -10,7 +10,7 @@ fn main() {
     let p = any().then(any()).fmap(Box::new(|_| 1));
 
     match p.execute(&"ab".as_bytes(), 0) {
-        Response(Some(1), 2, true) => println!("All done"),
+        Response { v: Some(1), o: 2, c: true } => println!("All done"),
         _ => println!("Ouch"),
     }
 }

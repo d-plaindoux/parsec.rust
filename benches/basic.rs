@@ -9,6 +9,7 @@ use parsecute::parsers::flow::*;
 use parsecute::parsers::literal::*;
 use parsecute::parsers::monadic::*;
 use parsecute::parsers::response::*;
+use parsecute::parsers::parser::Parser;
 
 // -------------------------------------------------------------------------------------------------
 // Basic benchmarks
@@ -71,7 +72,7 @@ fn basic_fmap(b: &mut Bencher) {
 // -------------------------------------------------------------------------------------------------
 
 fn literal_delimited_string(b: &mut Bencher) {
-    let string = "\"test\"".repeat(1024);
+    let string = "\"te\\\"st\"".repeat(1024);
     let data = string.as_bytes();
     b.bytes = data.len() as u64;
     parse(delimited_string().rep(), b, data)
@@ -81,7 +82,7 @@ fn literal_delimited_string(b: &mut Bencher) {
 
 fn literal_float(b: &mut Bencher) {
     let string = "-12.34".repeat(1024);
-    let data : &[u8] = string.as_bytes();
+    let data: &[u8] = string.as_bytes();
     b.bytes = data.len() as u64;
     parse(float().rep(), b, data)
 }
@@ -90,13 +91,15 @@ fn literal_float(b: &mut Bencher) {
 // Main parse function used for benchmarking
 // -------------------------------------------------------------------------------------------------
 
-fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8]) where E: Executable<'a, A> {
+fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8]) where E: Executable<'a, A> + Parser<A> {
+    let r = p.then(eos());
+
     b.iter(|| {
         let buffer = black_box(buffer);
 
-        match p.execute(buffer, 0) {
-            Response(Some(_), _, _) => (),
-            Response(None, o, _) => panic!("unable parse stream at character {}", o),
+        match r.execute(buffer, 0) {
+            Response { v: Some(_), o: _, c: _ } => (),
+            Response { v: None, o, c: _ } => panic!("unable parse stream at character {}", o),
         }
     });
 }

@@ -5,7 +5,7 @@ extern crate parsecute;
 use bencher::{Bencher, black_box};
 use parsecute::parsers::basic::*;
 use parsecute::parsers::core::*;
-use parsecute::parsers::data::SubString;
+use parsecute::parsers::data::*;
 use parsecute::parsers::execution::*;
 use parsecute::parsers::flow::*;
 use parsecute::parsers::literal::*;
@@ -14,11 +14,11 @@ use parsecute::parsers::parser::*;
 use parsecute::parsers::response::*;
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub enum JsonValue<'a> {
     Null(),
-    Str(&'a str),
-    Num(f32),
+    Str(String),
+    Num(f64),
     Boolean(bool),
     Array(Vec<JsonValue<'a>>),
     Object(HashMap<&'a str, JsonValue<'a>>),
@@ -30,38 +30,21 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
         skip(" \n\r\t".to_string()).then_right(p)
     }
 
-    fn to_str<'a>(s: SubString<'a>) -> &'a str {
-        let SubString(s, o, n) = s;
+    fn to_str(s: StringLiteral) -> &str {
+        let StringLiteral(s, o, n) = s;
         std::str::from_utf8(&s[o..n]).unwrap()
     }
 
-    #[inline]
-    fn forget<'a, E, A: 'a>(p: E) -> Parsec<'a, ()> where E: Executable<'a, A> + Parser<A> + 'a {
-        Parsec::<'a>(Box::new(p.fmap(Box::new(|_| ()))))
-    }
-    /*
-        #[inline]
-        fn constants<'a>() -> Parsec<'a, ()> {
-            let parser = "null".or("true").or("false").fmap(Box::new(|_| ()));
-            Parsec::<'a>(Box::new(parser))
-        }
-
-        #[inline]
-        fn atoms<'a>() -> Parsec<'a, ()> {
-            let parser = delimited_string().fmap(Box::new(|_| ())).or(float().fmap(Box::new(|_| ())));
-            Parsec::<'a>(Box::new(parser))
-        }
-    */
     #[inline]
     fn object<'a>() -> Parsec<'a, JsonValue<'a>> {
         let attribute = || spaces(delimited_string()).then_left(spaces(':')).then(json::<'a>());
         let attributes = attribute().then(spaces(',').then_right(attribute()).optrep()).opt();
         let parser = '{'.then_right(attributes).then_left(spaces('}')).fmap(Box::new(|v| {
             let mut r = HashMap::default();
-            if let Some(((k,e), v)) = v {
-                r.insert(to_str(k),e);
-                for (k,e) in v {
-                    r.insert(to_str(k),e);
+            if let Some(((k, e), v)) = v {
+                r.insert(to_str(k), e);
+                for (k, e) in v {
+                    r.insert(to_str(k), e);
                 }
             }
             JsonValue::Object(r)
@@ -93,16 +76,15 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
                 match c as char {
                     '{' => object::<'a>(),
                     '[' => array::<'a>(),
-                    '"' => Parsec::<'a>(Box::new(delimited_string().fmap(Box::new(|s| JsonValue::Str(to_str(s)))))),
+                    '"' => Parsec::<'a>(Box::new(delimited_string().fmap(Box::new(|v| JsonValue::Str(v.to_native_value()))))),
                     'f' => Parsec::<'a>(Box::new("false".fmap(Box::new(|_| JsonValue::Boolean(false))))),
                     't' => Parsec::<'a>(Box::new("true".fmap(Box::new(|_| JsonValue::Boolean(true))))),
                     'n' => Parsec::<'a>(Box::new("null".fmap(Box::new(|_| JsonValue::Null())))),
-                    _ => Parsec::<'a>(Box::new(float().fmap(Box::new(|v| JsonValue::Num(v))))),
+                    _ => Parsec::<'a>(Box::new(float().fmap(Box::new(|v| JsonValue::Num(v.to_native_value()))))),
                 }
             })))
         ));
 
-        // spaces(constants::<'a>().or(object::<'a>()).or(record::<'a>().or(atoms::<'a>())).fmap(Box::new(|_| ())))));
         Parsec::<'a>(Box::new(parser))
     }
 
@@ -135,7 +117,7 @@ fn json_data(b: &mut Bencher) {
 // -------------------------------------------------------------------------------------------------
 
 fn json_canada(b: &mut Bencher) {
-    let data = include_bytes!("data/canada_old.json");
+    let data = include_bytes!("data/canada.json");
     b.bytes = data.len() as u64;
     parse(json_parser(), b, data)
 }
@@ -157,8 +139,8 @@ fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8]) where E: Executable<
         let buffer = black_box(buffer);
 
         match p.execute(buffer, 0) {
-            Response(Some(_), _, _) => (),
-            Response(None, o, _) => panic!("unable parse stream at character {}", o),
+            Response { v: Some(_), o:_, c:_ } => (),
+            Response { v: None, o, c:_ } => panic!("unable parse stream at character {}", o),
         }
     });
 }

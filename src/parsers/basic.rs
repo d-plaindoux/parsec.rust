@@ -128,11 +128,25 @@ impl<'a, A> Executable<'a, A> for Return<A> where A: Copy {
     }
 }
 
+impl<'a, A> Parsable<'a, A> for Return<A> {
+    #[inline]
+    fn parse_only(&self, _: &'a [u8], o: usize) -> Response<()> {
+        response(Some(()), o, false)
+    }
+}
+
 // -------------------------------------------------------------------------------------------------
 
 impl<'a, A> Executable<'a, A> for Fail {
     #[inline]
     fn execute(&self, _: &'a [u8], o: usize) -> Response<A> {
+        response(None, o, false)
+    }
+}
+
+impl<'a, A> Parsable<'a, A> for Fail {
+    #[inline]
+    fn parse_only(&self, _: &'a [u8], o: usize) -> Response<()> {
         response(None, o, false)
     }
 }
@@ -144,6 +158,17 @@ impl<'a> Executable<'a, u8> for Any {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<u8> {
         if o < s.len() {
             return response(Some(s[o]), o + 1, true);
+        }
+
+        return response(None, o, false);
+    }
+}
+
+impl<'a> Parsable<'a, u8> for Any {
+    #[inline]
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        if o < s.len() {
+            return response(Some(()), o + 1, true);
         }
 
         return response(None, o, false);
@@ -163,15 +188,39 @@ impl<'a> Executable<'a, ()> for Eos {
     }
 }
 
+impl<'a> Parsable<'a, ()> for Eos {
+    #[inline]
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        if o < s.len() {
+            return response(None, o, false);
+        }
+
+        response(Some(()), o, false)
+    }
+}
+
 // -------------------------------------------------------------------------------------------------
 
 impl<'a, A, E> Executable<'a, A> for Try<E, A> where E: Executable<'a, A> + Parser<A> {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Try(p, _) = self;
+        let r = p.execute(s, o);
 
-        match p.execute(s, o) {
-            Response(None, o, _) => Response(None, o, false),
-            other => other
+        match r.v {
+            None => response(None, o, false),
+            _ => r
+        }
+    }
+}
+
+impl<'a, A, E> Parsable<'a, A> for Try<E, A> where E: Parsable<'a, A> + Parser<A> {
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let Try(p, _) = self;
+        let r = p.parse_only(s, o);
+
+        match r.v {
+            None => response(None, o, false),
+            _ => r
         }
     }
 }
@@ -181,10 +230,11 @@ impl<'a, A, E> Executable<'a, A> for Try<E, A> where E: Executable<'a, A> + Pars
 impl<'a, A, E> Executable<'a, A> for Lookahead<E, A> where E: Executable<'a, A> + Parser<A> {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Lookahead(p, _) = self;
+        let r = p.execute(s, o);
 
-        match p.execute(s, o) {
-            Response(Some(v), _, b) => response(Some(v), o, b),
-            other => other
+        match r.v {
+            Some(v) => response(Some(v), o, r.c),
+            _ => response(None, r.o, r.c)
         }
     }
 }
@@ -194,16 +244,35 @@ impl<'a, A, E> Executable<'a, A> for Lookahead<E, A> where E: Executable<'a, A> 
 impl<'a, A, E> Executable<'a, A> for Satisfy<E, A> where E: Executable<'a, A> + Parser<A> {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Satisfy(p, c) = self;
+        let r = p.execute(s, o);
 
-        match p.execute(s, o) {
-            Response(Some(a), i, b) => {
+        match r.v {
+            Some(a) => {
                 if (c)(&a) {
-                    response(Some(a), i, b)
+                    response(Some(a), r.o, r.c)
                 } else {
-                    response(None, i, b)
+                    response(None, r.o, r.c)
                 }
             }
-            r => r,
+            _ => r,
+        }
+    }
+}
+
+impl<'a, A, E> Parsable<'a, A> for Satisfy<E, A> where E: Executable<'a, A> + Parser<A> {
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let Satisfy(p, c) = self;
+        let r = p.execute(s, o);
+
+        match r.v {
+            Some(a) => {
+                if (c)(&a) {
+                    response(Some(()), r.o, r.c)
+                } else {
+                    response(None, r.o, r.c)
+                }
+            }
+            _ => response(None, r.o, r.c),
         }
     }
 }
@@ -219,6 +288,14 @@ impl<'a, A, E> Executable<'a, A> for Lazy<E, A> where E: Executable<'a, A> + Par
     }
 }
 
+impl<'a, A, E> Parsable<'a, A> for Lazy<E, A> where E: Parsable<'a, A> + Parser<A> {
+    #[inline]
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let Lazy(p, _) = self;
+
+        p().parse_only(s, o)
+    }
+}
 // -------------------------------------------------------------------------------------------------
 
 impl<'a> Executable<'a, ()> for Skip {
@@ -232,7 +309,22 @@ impl<'a> Executable<'a, ()> for Skip {
             n += 1;
         }
 
-        Response(Some(()), n, false)
+        response(Some(()), n, false)
+    }
+}
+
+impl<'a> Parsable<'a, ()> for Skip {
+    #[inline]
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let Skip(chars) = self;
+        let bytes = chars.as_bytes();
+        let mut n = o;
+
+        while n < s.len() && bytes.contains(&s[n]) {
+            n += 1;
+        }
+
+        response(Some(()), n, false)
     }
 }
 

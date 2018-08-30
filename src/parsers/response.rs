@@ -1,8 +1,12 @@
-pub struct Response<A>(pub Option<A>, pub usize, pub bool);
+pub struct Response<A> {
+    pub v: Option<A>,
+    pub o: usize,
+    pub c: bool
+}
 
 #[inline]
 pub fn response<A>(v: Option<A>, o: usize, c: bool) -> Response<A> {
-    Response(v, o, c)
+    Response { v, o, c }
 }
 
 pub trait FoldResponse<A, B> {
@@ -18,11 +22,9 @@ pub trait FMapResponse<A, B> {
 
 impl<A, B> FoldResponse<A, B> for Response<A> {
     fn fold_fn(self, success: &Fn(A, usize, bool) -> B, reject: &Fn(usize, bool) -> B) -> B {
-        let Response(v, s, b) = self;
-
-        match v {
-            Some(a) => success(a, s, b),
-            _ => reject(s, b)
+        match self.v {
+            Some(a) => success(a, self.o, self.c),
+            _ => reject(self.o, self.c)
         }
     }
 
@@ -33,11 +35,9 @@ impl<A, B> FoldResponse<A, B> for Response<A> {
 
 impl<A, B> FMapResponse<A, B> for Response<A> {
     fn fmap(self, f: fn(A) -> B) -> Response<B> {
-        let Response(v, s, b) = self;
-
-        match v {
-            Some(a) => response(Some(f(a)), s, b),
-            None => response(None, s, b)
+        match self.v {
+            Some(a) => response(Some(f(a)), self.o, self.c),
+            None => response(None, self.o, self.c)
         }
     }
 }

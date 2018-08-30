@@ -48,10 +48,25 @@ impl<'a, E, A, B> Executable<'a, B> for FMap<E, A, B>
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<B> {
         let FMap(p, f) = self;
+        let r = p.execute(s, o);
 
-        match p.execute(s, o) {
-            Response(Some(v), o, b) => response(Some(f(v)), o, b),
-            Response(None, o, b) => response(None, o, b)
+        match r.v {
+            Some(v) => response(Some(f(v)), r.o, r.c),
+            _ => response(None, r.o, r.c)
+        }
+    }
+}
+
+impl<'a, E, A, B> Parsable<'a, B> for FMap<E, A, B>
+    where E: Parsable<'a, A> + Parser<A>
+{
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let FMap(p, _) = self;
+        let r = p.parse_only(s, o);
+
+        match r.v {
+            Some(_) => response(Some(()), r.o, r.c),
+            _ => response(None, r.o, r.c)
         }
     }
 }
@@ -64,15 +79,18 @@ impl<'a, E, A, R, B> Executable<'a, B> for Bind<E, A, R, B>
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<B> {
         let Bind(p, f, _) = self;
+        let r1 = p.execute(s, o);
 
-        match p.execute(s, o) {
-            Response(Some(a1), i1, b1) => {
-                match f(a1).execute(s, i1) {
-                    Response(Some(a2), i2, b2) => response(Some(a2), i2, b1 || b2),
-                    Response(None, i2, b2) => response(None, i2, b1 || b2),
+        match r1.v {
+            Some(a1) => {
+                let r2 = f(a1).execute(s, r1.o);
+
+                match r2.v {
+                    Some(a2) => response(Some(a2), r2.o, r1.c || r2.c),
+                    _ => response(None, r2.o , r1.c || r2.c),
                 }
             }
-            Response(None, i1, b1) => response(None, i1, b1)
+            _ => response(None, r1.o, r1.c)
         }
     }
 }

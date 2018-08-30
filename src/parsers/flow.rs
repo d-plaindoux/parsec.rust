@@ -105,18 +105,18 @@ impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
 
 //  -------------------------------------------------------------------------------------------------
 
-pub type TypeWhile = Repeat<Satisfy<Try<Any, u8>, u8>, u8>;
+pub type TypeWhile = Repeat<Satisfy<Any, u8>, u8>;
 
 #[inline]
 pub fn take_while(f: Box<(Fn(&u8) -> bool)>) -> TypeWhile {
-    optrep(do_try(any()).satisfy(f))
+    any().satisfy(f).optrep()
 }
 
-pub type TakeOne = Satisfy<Try<Any, u8>, u8>;
+pub type TakeOne = Try<Satisfy<Any, u8>, u8>;
 
 #[inline]
 pub fn take_one(f: Box<(Fn(&u8) -> bool)>) -> TakeOne {
-    do_try(any()).satisfy(f)
+    do_try(any().satisfy(f))
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -129,14 +129,36 @@ impl<'a, E, R, A> Executable<'a, A> for Or<E, R, A>
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Or(p1, p2, _) = self;
+        let r = p1.execute(s, o);
 
-        match p1.execute(s, o) {
-            Response(Some(a1), i1, b1) => response(Some(a1), i1, b1),
-            Response(None, o, b1) => {
-                if b1 {
-                    response(None, o, b1)
+        match r.v {
+            Some(_) => r,
+            _ => {
+                if r.c {
+                    response(None, r.o, r.c)
                 } else {
                     p2.execute(s, o)
+                }
+            }
+        }
+    }
+}
+
+impl<'a, E, R, A> Parsable<'a, A> for Or<E, R, A>
+    where E: Parsable<'a, A> + Parser<A>,
+          R: Parsable<'a, A> + Parser<A>
+{
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let Or(p1, p2, _) = self;
+        let r = p1.parse_only(s, o);
+
+        match r.v {
+            Some(_) => r,
+            _ => {
+                if r.c {
+                    response(None, r.o, r.c)
+                } else {
+                    p2.parse_only(s, o)
                 }
             }
         }
@@ -151,15 +173,42 @@ impl<'a, E, A, R, B> Executable<'a, (A, B)> for And<E, A, R, B>
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<(A, B)> {
         let And(p1, p2, _, _) = self;
+        let r1 = p1.execute(s, o);
 
-        match p1.execute(s, o) {
-            Response(Some(a1), i1, b1) => {
-                match p2.execute(s, i1) {
-                    Response(Some(a2), i2, b2) => response(Some((a1, a2)), i2, b1 || b2),
-                    Response(None, i2, b2) => response(None, i2, b1 || b2),
+
+        match r1.v {
+            Some(a1) => {
+                let r2 = p2.execute(s, r1.o);
+
+                match r2.v {
+                    Some(a2) => response(Some((a1, a2)), r2.o, r1.c || r2.c),
+                    _ => response(None, r2.o, r1.c || r2.c),
                 }
             }
-            Response(None, i1, b1) => response(None, i1, b1)
+            _ => response(None, r1.o, r1.c)
+        }
+    }
+}
+
+impl<'a, E, A, R, B> Parsable<'a, (A, B)> for And<E, A, R, B>
+    where E: Parsable<'a, A> + Parser<A>,
+          R: Parsable<'a, B> + Parser<B>
+{
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let And(p1, p2, _, _) = self;
+        let r1 = p1.parse_only(s, o);
+
+
+        match r1.v {
+            Some(_) => {
+                let r2 = p2.parse_only(s, r1.o);
+
+                match r2.v {
+                    Some(_) => response(Some(()), r2.o, r1.c || r2.c),
+                    _ => response(None, r2.o, r1.c || r2.c),
+                }
+            }
+            _ => response(None, r1.o, r1.c)
         }
     }
 }
@@ -171,11 +220,27 @@ impl<'a, E, A> Executable<'a, Option<A>> for Opt<E, A>
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<Option<A>> {
         let Opt(p, _) = self;
+        let r = p.execute(s, o);
 
-        match p.execute(s, o) {
-            Response(Some(a), o, b) => response(Some(Some(a)), o, b),
-            Response(None, _, false) => response(Some(None), o, false),
-            Response(None, o, true) => response(None, o, true)
+        match r.v {
+            Some(a) => response(Some(Some(a)), r.o, r.c),
+            None if r.c == false => response(Some(None), o, r.c),
+            None => response(None, o, r.c)
+        }
+    }
+}
+
+impl<'a, E, A> Parsable<'a, Option<A>> for Opt<E, A>
+    where E: Parsable<'a, A> + Parser<A>
+{
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let Opt(p, _) = self;
+        let r = p.parse_only(s, o);
+
+        match r.v {
+            Some(_) => response(Some(()), r.o, r.c),
+            None if r.c == false => response(Some(()), o, r.c),
+            None => response(None, o, r.c)
         }
     }
 }
@@ -193,14 +258,15 @@ impl<'a, E, A> Executable<'a, Vec<A>> for Repeat<E, A>
         let mut consumed = false;
 
         loop {
-            match p.execute(s, offset) {
-                Response(Some(a1), i1, b1) => {
-                    result.push(a1);
-                    offset = i1;
-                    consumed = consumed || b1;
+            let r = p.execute(s, offset);
+            match r.v {
+                Some(a) => {
+                    result.push(a);
+                    offset = r.o;
+                    consumed = consumed || r.c;
                 }
                 _ => {
-                    if *opt || result.len() > 0 {
+                    if *opt || offset - o > 0 {
                         return response(Some(result), offset, consumed);
                     }
 
@@ -211,6 +277,33 @@ impl<'a, E, A> Executable<'a, Vec<A>> for Repeat<E, A>
     }
 }
 
+impl<'a, E, A> Parsable<'a, Vec<A>> for Repeat<E, A>
+    where E: Parsable<'a, A> + Parser<A>
+{
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let Repeat(opt, p, _) = self;
+
+        let mut offset = o;
+        let mut consumed = false;
+
+        loop {
+            let r = p.parse_only(s, offset);
+            match r.v {
+                Some(_) => {
+                    offset = r.o;
+                    consumed = consumed || r.c;
+                }
+                _ => {
+                    if *opt || offset - o > 0 {
+                        return response(Some(()), offset, consumed);
+                    }
+
+                    return response(None, offset, consumed);
+                }
+            }
+        }
+    }
+}
 // -------------------------------------------------------------------------------------------------
 
 #[macro_export]

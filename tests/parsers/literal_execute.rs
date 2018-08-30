@@ -80,7 +80,7 @@ fn it_parse_with_digit() {
 #[test]
 fn it_parse_with_float() {
     assert_eq!(-1024.32, float().execute(&"-1024.32".as_bytes(), 0).fold(
-        |a, _, _| a,
+        |a, _, _| a.to_native_value(),
         |_, _| panic!("Parse error"),
     ));
 }
@@ -88,10 +88,7 @@ fn it_parse_with_float() {
 #[test]
 fn it_parse_with_delimited_string() {
     assert_eq!("1024", delimited_string().execute(&"\"1024\"".as_bytes(), 0).fold(
-        |a, _, _| {
-            let SubString(s, o, n) = a;
-            String::from_utf8_lossy(&s[o..n]).to_string()
-        },
+        |a, _, _| a.to_native_value(),
         |_, _| panic!("Parse error"),
     ));
 }
@@ -108,8 +105,8 @@ fn it_parse_with_delimited_char() {
 fn it_parse_extracting_float() {
     let p = "Hello<".to_string().then(float()).then('>').fmap(Box::new(|((_, b, ), _)| b));
 
-    assert_eq!(42f32, p.execute(&"Hello<42>".as_bytes(), 0).fold(
-        |a, _, _| a,
+    assert_eq!(42f64, p.execute(&"Hello<42>".as_bytes(), 0).fold(
+        |a, _, _| a.to_native_value(),
         |_, _| panic!("Parse error"),
     ));
 }
