@@ -17,7 +17,7 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub enum JsonValue<'a> {
     Null(),
-    Str(String),
+    Str(&'a str),
     Num(f64),
     Boolean(bool),
     Array(Vec<JsonValue<'a>>),
@@ -71,12 +71,12 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     #[inline]
     fn json<'a>() -> Parsec<'a, JsonValue<'a>> {
         let parser = lazy(Box::new(||
-            // This trigger should be done automatically ...
+            // This trigger should be done automatically in the next version hiding this ugly parse type impersonation
             spaces(lookahead(any()).bind(Box::new(|c| {
                 match c as char {
                     '{' => object::<'a>(),
                     '[' => array::<'a>(),
-                    '"' => Parsec::<'a>(Box::new(delimited_string().fmap(Box::new(|v| JsonValue::Str(v.to_native_value()))))),
+                    '"' => Parsec::<'a>(Box::new(delimited_string().fmap(Box::new(|v| JsonValue::Str(to_str(v)))))),
                     'f' => Parsec::<'a>(Box::new("false".fmap(Box::new(|_| JsonValue::Boolean(false))))),
                     't' => Parsec::<'a>(Box::new("true".fmap(Box::new(|_| JsonValue::Boolean(true))))),
                     'n' => Parsec::<'a>(Box::new("null".fmap(Box::new(|_| JsonValue::Null())))),
@@ -116,8 +116,16 @@ fn json_data(b: &mut Bencher) {
 
 // -------------------------------------------------------------------------------------------------
 
-fn json_canada(b: &mut Bencher) {
-    let data = include_bytes!("data/canada.json");
+fn json_canada_pest(b: &mut Bencher) {
+    let data = include_bytes!("data/canada_pest.json");
+    b.bytes = data.len() as u64;
+    parse(json_parser(), b, data)
+}
+
+// -------------------------------------------------------------------------------------------------
+
+fn json_canada_nom(b: &mut Bencher) {
+    let data = include_bytes!("data/canada_nom.json");
     b.bytes = data.len() as u64;
     parse(json_parser(), b, data)
 }
@@ -146,6 +154,6 @@ fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8]) where E: Executable<
 }
 
 benchmark_group!(benches,
-                 json_basic, json_data, json_canada, json_apache
+                 json_basic, json_data, json_canada_pest, json_canada_nom, json_apache
                 );
 benchmark_main!(benches);

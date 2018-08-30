@@ -120,6 +120,17 @@ pub fn take_one(f: Box<(Fn(&u8) -> bool)>) -> TakeOne {
 }
 
 // -------------------------------------------------------------------------------------------------
+
+pub struct Skip(pub String);
+
+impl Parser<()> for Skip {}
+
+#[inline]
+pub fn skip(s: String) -> Skip {
+    Skip(s)
+}
+
+// -------------------------------------------------------------------------------------------------
 // Parser execution
 // -------------------------------------------------------------------------------------------------
 
@@ -304,6 +315,31 @@ impl<'a, E, A> Parsable<'a, Vec<A>> for Repeat<E, A>
         }
     }
 }
+// -------------------------------------------------------------------------------------------------
+
+
+impl<'a> Executable<'a, ()> for Skip {
+    #[inline]
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<()> {
+        self.parse_only(s, o)
+    }
+}
+
+impl<'a> Parsable<'a, ()> for Skip {
+    #[inline]
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let Skip(chars) = self;
+        let bytes = chars.as_bytes();
+        let mut n = o;
+
+        while n < s.len() && bytes.contains(&s[n]) {
+            n += 1;
+        }
+
+        response(Some(()), n, false)
+    }
+}
+
 // -------------------------------------------------------------------------------------------------
 
 #[macro_export]

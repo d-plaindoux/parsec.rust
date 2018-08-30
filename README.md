@@ -70,8 +70,8 @@ module `parsecute::parsers::literals`
 ```rust
 digit        :: () -> Parser<char>
 letter       :: () -> Parser<char>
-float        :: () -> Parser<f32>
-string_delim :: () -> Parser<String>
+float        :: () -> Parser<FloatLiteral>
+string_delim :: () -> Parser<StringLiteral>
 char_delim   :: () -> Parser<char>
 ```
 
@@ -87,18 +87,112 @@ let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
 
 # Benchmarks
 
-[Nom & al. Benchmarks](https://github.com/Geal/parser_benchmarks/tree/master/json)
-
-## JSon benches
-
 The benchmarks were run on a 2016 Macbook Pro, quad core 2,7 GHz Intel Core i7.
 
+## Brute force tests on basic parsers execution
+
 ```
-test basic  ... bench:      10,853 ns/iter (+/- 2,584) = 7 MB/s
-test canada ... bench:     348,430 ns/iter (+/- 58,229) = 26 MB/s
-test apache ... bench:   4,425,182 ns/iter (+/- 420,662) = 28 MB/s
-test data   ... bench:     343,244 ns/iter (+/- 72,412) = 26 MB/s
+test basic_and                ... bench:   7,971,699 ns/iter (+/- 1,005,128) = 131 MB/s
+test basic_any                ... bench:     990,096 ns/iter (+/- 550,996) = 1059 MB/s
+test basic_do_try             ... bench:     911,593 ns/iter (+/- 58,521) = 1150 MB/s
+test basic_fmap               ... bench:   9,200,929 ns/iter (+/- 880,518) = 113 MB/s
+test basic_or                 ... bench:  11,342,151 ns/iter (+/- 2,780,405) = 92 MB/s
+test basic_skip               ... bench:  11,097,176 ns/iter (+/- 650,653) = 188 MB/s
+test literal_delimited_string ... bench:      10,365 ns/iter (+/- 1,332) = 790 MB/s
+test literal_float            ... bench:      15,928 ns/iter (+/- 3,338) = 771 MB/s
 ```
+
+## Json benches
+
+### The Parser 
+
+````rust
+fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
+    #[inline]
+    fn spaces<E, A>(p: E) -> FMap<And<Skip, (), E, A>, ((), A), A> where E: Parser<A> {
+        skip(" \n\r\t".to_string()).then_right(p)
+    }
+
+    fn to_str(s: StringLiteral) -> &str {
+        let StringLiteral(s, o, n) = s;
+        std::str::from_utf8(&s[o..n]).unwrap()
+    }
+
+    #[inline]
+    fn object<'a>() -> Parsec<'a, JsonValue<'a>> {
+        let attribute = || spaces(delimited_string()).then_left(spaces(':')).then(json::<'a>());
+        let attributes = attribute().then(spaces(',').then_right(attribute()).optrep()).opt();
+        let parser = '{'.then_right(attributes).then_left(spaces('}')).fmap(Box::new(|v| {
+            let mut r = HashMap::default();
+            if let Some(((k, e), v)) = v {
+                r.insert(to_str(k), e);
+                for (k, e) in v { r.insert(to_str(k), e); }
+            }
+            JsonValue::Object(r)
+        }));
+        Parsec::<'a>(Box::new(parser))
+    }
+
+    #[inline]
+    fn array<'a>() -> Parsec<'a, JsonValue<'a>> {
+        let elements = json::<'a>().then(spaces(',').then_right(json::<'a>()).optrep()).opt();
+        let parser = '['.then_right(elements).then_left(spaces(']')).fmap(Box::new(|v| {
+            let mut r = Vec::default();
+            if let Some((e, v)) = v {
+                r.push(e);
+                for e in v { r.push(e); }
+            }
+            JsonValue::Array(r)
+        }));
+        Parsec::<'a>(Box::new(parser))
+    }
+
+    #[inline]
+    fn json<'a>() -> Parsec<'a, JsonValue<'a>> {
+        let parser = lazy(Box::new(||
+            // This trigger should be done automatically in the next version hiding this ugly parse type impersonation
+            spaces(lookahead(any()).bind(Box::new(|c| {
+                match c as char {
+                    '{' => object::<'a>(),
+                    '[' => array::<'a>(),
+                    '"' => Parsec::<'a>(Box::new(delimited_string().fmap(Box::new(|v| JsonValue::Str(to_str(v)))))),
+                    'f' => Parsec::<'a>(Box::new("false".fmap(Box::new(|_| JsonValue::Boolean(false))))),
+                    't' => Parsec::<'a>(Box::new("true".fmap(Box::new(|_| JsonValue::Boolean(true))))),
+                    'n' => Parsec::<'a>(Box::new("null".fmap(Box::new(|_| JsonValue::Null())))),
+                    _ => Parsec::<'a>(Box::new(float().fmap(Box::new(|v| JsonValue::Num(v.to_native_value()))))),
+                }
+            })))
+        ));
+
+        Parsec::<'a>(Box::new(parser))
+    }
+
+    Parsec::<'a>(Box::new(json::<'a>().then_left(spaces(eos()))))
+}
+
+````
+
+### JSon benches based on Nom data set
+
+Reference: [Nom & al. Benchmarks](https://github.com/Geal/parser_benchmarks/tree/master/json)
+
+```
+test json_apache      ... bench:   2,434,180 ns/iter (+/- 192,180) = 51 MB/s
+test json_basic       ... bench:       3,960 ns/iter (+/- 374) = 19 MB/s
+test json_canada_nom  ... bench:     135,969 ns/iter (+/- 23,376) = 68 MB/s
+test json_data        ... bench:     170,537 ns/iter (+/- 103,725) = 54 MB/s
+```
+
+### JSon benches based on Pest data set
+
+Reference: [Pest & al. Benchmarks](https://github.com/Geal/parser_benchmarks/tree/master/json)
+
+```
+test json_canada_pest ... bench:  97,576,631 ns/iter (+/- 41,502,590) = 23 MB/s
+```
+
+Based on the throughput the referenced Json file is processed building the corresponding
+AST in 86ms.
 
 # License
 

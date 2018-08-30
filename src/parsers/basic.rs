@@ -105,17 +105,6 @@ pub fn lazy<E, A>(p: Box<Fn() -> E>) -> Lazy<E, A> where E: Parser<A> {
 }
 
 // -------------------------------------------------------------------------------------------------
-
-pub struct Skip(pub String);
-
-impl Parser<()> for Skip {}
-
-#[inline]
-pub fn skip(s: String) -> Skip {
-    Skip(s)
-}
-
-// -------------------------------------------------------------------------------------------------
 // Parser execution
 // -------------------------------------------------------------------------------------------------
 
@@ -180,11 +169,7 @@ impl<'a> Parsable<'a, u8> for Any {
 impl<'a> Executable<'a, ()> for Eos {
     #[inline]
     fn execute(&self, s: &'a [u8], o: usize) -> Response<()> {
-        if o < s.len() {
-            return response(None, o, false);
-        }
-
-        response(Some(()), o, false)
+        self.parse_only(s, o)
     }
 }
 
@@ -296,37 +281,7 @@ impl<'a, A, E> Parsable<'a, A> for Lazy<E, A> where E: Parsable<'a, A> + Parser<
         p().parse_only(s, o)
     }
 }
-// -------------------------------------------------------------------------------------------------
 
-impl<'a> Executable<'a, ()> for Skip {
-    #[inline]
-    fn execute(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let Skip(chars) = self;
-        let bytes = chars.as_bytes();
-        let mut n = o;
-
-        while n < s.len() && bytes.contains(&s[n]) {
-            n += 1;
-        }
-
-        response(Some(()), n, false)
-    }
-}
-
-impl<'a> Parsable<'a, ()> for Skip {
-    #[inline]
-    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let Skip(chars) = self;
-        let bytes = chars.as_bytes();
-        let mut n = o;
-
-        while n < s.len() && bytes.contains(&s[n]) {
-            n += 1;
-        }
-
-        response(Some(()), n, false)
-    }
-}
 
 // -------------------------------------------------------------------------------------------------
 

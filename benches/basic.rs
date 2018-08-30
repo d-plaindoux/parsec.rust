@@ -81,7 +81,7 @@ fn literal_delimited_string(b: &mut Bencher) {
 // -------------------------------------------------------------------------------------------------
 
 fn literal_float(b: &mut Bencher) {
-    let string = "-12.34".repeat(1024);
+    let string = "-12.34000056".repeat(1024);
     let data: &[u8] = string.as_bytes();
     b.bytes = data.len() as u64;
     parse(float().rep(), b, data)

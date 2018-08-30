@@ -149,11 +149,7 @@ impl<'a> Executable<'a, String> for String {
 
 impl<'a> Parsable<'a, String> for String {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let r = self.deref().execute(s, o);
-        match r.v {
-            Some(_) => response(Some(()), r.o, r.c),
-            _ => response(None, r.o, r.c)
-        }
+        self.deref().parse_only(s, o)
     }
 }
 
@@ -161,6 +157,18 @@ impl<'a> Parsable<'a, String> for String {
 
 impl<'a> Executable<'a, &'a str> for &'a str {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<&'a str> {
+        let r = self.parse_only(s, o);
+
+        match r.v {
+            Some(_) => response(Some(self), r.o, r.c),
+            _ => response(None, r.o, r.c)
+        }
+
+    }
+}
+
+impl<'a> Parsable<'a, &'a str> for &'a str {
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
         if o + self.len() > s.len() {
             return response(None, o, false);
         }
@@ -173,7 +181,7 @@ impl<'a> Executable<'a, &'a str> for &'a str {
             }
         }
 
-        response(Some(self), o + self.len(), self.len() > 0)
+        response(Some(()), o + self.len(), self.len() > 0)
     }
 }
 
@@ -181,11 +189,7 @@ impl<'a> Executable<'a, &'a str> for &'a str {
 
 impl<'a> Executable<'a, FloatLiteral<'a>> for Float {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<FloatLiteral<'a>> {
-        let p = '+'.or('-').opt()
-            .then(('0'..'9').rep())
-            .then('.'.then(('0'..'9').rep()).opt());
-
-        let r = p.parse_only(s, o);
+        let r = self.parse_only(s, o);
 
         match r.v {
             Some(_) => response(Some(FloatLiteral(s, o, r.o)), r.o, r.c),
@@ -200,27 +204,28 @@ impl<'a> Parsable<'a, FloatLiteral<'a>> for Float {
             .then(('0'..'9').rep())
             .then('.'.then(('0'..'9').rep()).opt());
 
-        let r = p.parse_only(s, o);
-
-        match r.v {
-            Some(_) => response(Some(()), r.o, r.c),
-            _ => response(None, r.o, r.c)
-        }
+        p.parse_only(s, o)
     }
 }
 // -------------------------------------------------------------------------------------------------
 
 impl<'a> Executable<'a, StringLiteral<'a>> for DelimitedString {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<StringLiteral<'a>> {
-        let c = '\\'.then_right(any()).or(any().satisfy(Box::new(|b| *b as char != '"')));
-        let p = '"'.then(c.optrep()).then('"');
-
-        let r = p.parse_only(s, o);
+        let r = self.parse_only(s, o);
 
         match r.v {
             Some(_) => response(Some(StringLiteral(s, o + 1, r.o - 1)), r.o, r.c),
             _ => response(None, r.o, r.c)
         }
+    }
+}
+
+impl<'a> Parsable<'a, StringLiteral<'a>> for DelimitedString {
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        let c = '\\'.then_right(any()).or(any().satisfy(Box::new(|b| *b as char != '"')));
+        let p = '"'.then(c.optrep()).then('"');
+
+        p.parse_only(s, o)
     }
 }
 
@@ -233,5 +238,11 @@ impl<'a> Executable<'a, char> for DelimitedChar {
             .then_left('\'');
 
         p.execute(s, o)
+    }
+}
+
+impl<'a> Parsable<'a, char> for DelimitedChar {
+    fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
+        self.execute(s, o).fmap(|_| ())
     }
 }
