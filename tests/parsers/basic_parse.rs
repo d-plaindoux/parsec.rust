@@ -1,6 +1,7 @@
 use parsecute::parsers::basic::*;
 use parsecute::parsers::execution::*;
 use parsecute::parsers::response::*;
+use parsecute::parsers::flow::skip;
 
 #[test]
 fn it_parse_with_returns() {
