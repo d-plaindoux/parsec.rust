@@ -4,6 +4,7 @@ pub mod parser;
 pub mod execution;
 #[macro_use]
 pub mod core;
+#[macro_use]
 pub mod basic;
 pub mod monadic;
 #[macro_use]

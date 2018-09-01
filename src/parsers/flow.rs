@@ -13,11 +13,12 @@ pub struct Or<E, R, A>(pub E, pub R, PhantomData<A>) where E: Parser<A>, R: Pars
 
 impl<E, R, A> Parser<A> for Or<E, R, A> where E: Parser<A>, R: Parser<A> {}
 
-pub trait OrOperation<E, R, A> where E: Parser<A>, R: Parser<A> {
-    fn or(self, R) -> Or<E, R, A>;
+
+pub trait OrOperation<E, R, A, OR> where E: Parser<A>, R: Parser<A> {
+    fn or(self, R) -> OR;
 }
 
-impl<E, R, A> OrOperation<E, R, A> for E where E: Parser<A>, R: Parser<A> {
+impl<E, R, A> OrOperation<E, R, A, Or<E, R, A>> for E where E: Parser<A>, R: Parser<A> {
     #[inline]
     fn or(self, a: R) -> Or<E, R, A> {
         Or(self, a, PhantomData)

@@ -1,5 +1,5 @@
 pub struct Response<A> {
-    pub v: Option<A>,
+    pub v: Option<A>, // None for reject and Some(?) for a success
     pub o: usize,
     pub c: bool
 }

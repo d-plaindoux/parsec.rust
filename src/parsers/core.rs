@@ -16,7 +16,7 @@ pub fn parsec<'a, A>(p: Box<Executable<'a, A> + 'a>) -> Parsec<'a, A> {
 
 #[macro_export]
 macro_rules! parsec {
-    ($a:expr, $e:expr) => { parsec::<$a>(Box::new($e)) };
+    ($a:lifetime, $e:expr) => { Parsec::<$a>(Box::new($e)) };
     ($e:expr) => { parsec(Box::new($e)) };
 }
 

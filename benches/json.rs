@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate bencher;
+#[macro_use]
 extern crate parsecute;
 
 use bencher::{Bencher, black_box};
@@ -49,7 +50,8 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
             }
             JsonValue::Object(r)
         }));
-        Parsec::<'a>(Box::new(parser))
+
+        parsec!('a, parser)
     }
 
     #[inline]
@@ -64,30 +66,31 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
                 JsonValue::Array(Vec::default())
             }
         }));
-        Parsec::<'a>(Box::new(parser))
+
+        parsec!('a, parser)
     }
 
     #[inline]
     fn json<'a>() -> Parsec<'a, JsonValue<'a>> {
-        let parser = lazy(Box::new(||
+        let parser = lazy!(
             // This trigger should be done automatically in the next version hiding this ugly parse type impersonation
             spaces(lookahead(any()).bind(Box::new(|c| {
                 match c as char {
                     '{' => object::<'a>(),
                     '[' => array::<'a>(),
-                    '"' => Parsec::<'a>(Box::new(delimited_string().fmap(Box::new(|v| JsonValue::Str(to_str(v)))))),
-                    'f' => Parsec::<'a>(Box::new("false".fmap(Box::new(|_| JsonValue::Boolean(false))))),
-                    't' => Parsec::<'a>(Box::new("true".fmap(Box::new(|_| JsonValue::Boolean(true))))),
-                    'n' => Parsec::<'a>(Box::new("null".fmap(Box::new(|_| JsonValue::Null())))),
-                    _ => Parsec::<'a>(Box::new(float().fmap(Box::new(|v| JsonValue::Num(v.to_native_value()))))),
+                    '"' => parsec!('a, delimited_string().fmap(Box::new(|v| JsonValue::Str(to_str(v))))),
+                    'f' => parsec!('a, "false".fmap(Box::new(|_| JsonValue::Boolean(false)))),
+                    't' => parsec!('a, "true".fmap(Box::new(|_| JsonValue::Boolean(true)))),
+                    'n' => parsec!('a, "null".fmap(Box::new(|_| JsonValue::Null()))),
+                    _   => parsec!('a, float().fmap(Box::new(|v| JsonValue::Num(v.to_native_value())))),
                 }
             })))
-        ));
+        );
 
-        Parsec::<'a>(Box::new(parser))
+        parsec!('a, parser)
     }
 
-    Parsec::<'a>(Box::new(json::<'a>().then_left(spaces(eos()))))
+    parsec!('a,json::<'a>().then_left(spaces(eos())))
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -153,6 +156,6 @@ fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8]) where E: Executable<
 }
 
 benchmark_group!(benches,
-                 json_basic, json_data, json_canada_pest, json_canada_nom, json_apache
-                );
+json_basic, json_data, json_canada_pest, json_canada_nom, json_apache
+);
 benchmark_main!(benches);
