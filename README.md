@@ -107,10 +107,19 @@ test literal_float            ... bench:      15,928 ns/iter (+/- 3,338) = 771 M
 ### The Parser 
 
 ````rust
+pub enum JsonValue<'a> {
+    Null(),
+    Str(&'a str),
+    Num(f64),
+    Boolean(bool),
+    Array(Vec<JsonValue<'a>>),
+    Object(HashMap<&'a str, JsonValue<'a>>),
+}
+
 fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     #[inline]
     fn spaces<E, A>(p: E) -> FMap<And<Skip, (), E, A>, ((), A), A> where E: Parser<A> {
-        skip(" \n\r\t".to_string()).then_right(p)
+        seq!((skip(" \n\r\t".to_string())) ~> (p))
     }
 
     fn to_str(s: StringLiteral) -> &str {
@@ -120,9 +129,9 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
 
     #[inline]
     fn object<'a>() -> Parsec<'a, JsonValue<'a>> {
-        let attribute = || spaces(delimited_string()).then_left(spaces(':')).then(json::<'a>());
-        let attributes = attribute().then(spaces(',').then_right(attribute()).optrep()).opt();
-        let parser = '{'.then_right(attributes).then_left(spaces('}')).fmap(Box::new(|v| {
+        let attribute = || seq!((seq!((spaces(delimited_string())) <~ (spaces(':')))) ~ (json::<'a>()));
+        let attributes = seq!((attribute()) ~ (seq!((spaces(',')) ~> (attribute())).optrep())).opt();
+        let parser = seq!(('{') ~> (attributes) <~ (spaces('}'))).fmap(Box::new(|v| {
             let mut r = HashMap::default();
             if let Some(((k, e), v)) = v {
                 r.insert(to_str(k), e);
@@ -138,8 +147,8 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
 
     #[inline]
     fn array<'a>() -> Parsec<'a, JsonValue<'a>> {
-        let elements = json::<'a>().then(spaces(',').then_right(json::<'a>()).optrep()).opt();
-        let parser = '['.then_right(elements).then_left(spaces(']')).fmap(Box::new(|v| {
+        let elements = seq!((json::<'a>()) ~ (seq!((spaces(',')) ~> (json::<'a>())).optrep())).opt();
+        let parser = seq!(('[') ~> (elements) <~ (spaces(']'))).fmap(Box::new(|v| {
             if let Some((e, v)) = v {
                 let mut r = v;
                 r.insert(0, e);
