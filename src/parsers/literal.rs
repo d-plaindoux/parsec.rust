@@ -1,5 +1,4 @@
 use parsers::basic::*;
-use parsers::data::*;
 use parsers::execution::*;
 use parsers::flow::*;
 use parsers::monadic::*;
@@ -24,11 +23,11 @@ impl<'a> Parser<&'a str> for &'a str {}
 
 pub struct Float();
 
-impl<'a> Parser<FloatLiteral<'a>> for Float {}
+impl<'a> Parser<&'a [u8]> for Float {}
 
 pub struct DelimitedString();
 
-impl<'a> Parser<StringLiteral<'a>> for DelimitedString {}
+impl<'a> Parser<&'a [u8]> for DelimitedString {}
 
 pub struct DelimitedChar();
 
@@ -187,18 +186,18 @@ impl<'a> Parsable<'a, &'a str> for &'a str {
 
 // -------------------------------------------------------------------------------------------------
 
-impl<'a> Executable<'a, FloatLiteral<'a>> for Float {
-    fn execute(&self, s: &'a [u8], o: usize) -> Response<FloatLiteral<'a>> {
+impl<'a> Executable<'a, &'a [u8]> for Float {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<&'a [u8]> {
         let r = self.parse_only(s, o);
 
         match r.v {
-            Some(_) => response(Some(FloatLiteral(s, o, r.o)), r.o, r.c),
+            Some(_) => response(Some(&s[o..r.o]), r.o, r.c),
             _ => response(None, r.o, r.c)
         }
     }
 }
 
-impl<'a> Parsable<'a, FloatLiteral<'a>> for Float {
+impl<'a> Parsable<'a, &'a [u8]> for Float {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
         let p = '+'.or('-').opt()
             .then(('0'..'9').rep())
@@ -209,18 +208,18 @@ impl<'a> Parsable<'a, FloatLiteral<'a>> for Float {
 }
 // -------------------------------------------------------------------------------------------------
 
-impl<'a> Executable<'a, StringLiteral<'a>> for DelimitedString {
-    fn execute(&self, s: &'a [u8], o: usize) -> Response<StringLiteral<'a>> {
+impl<'a> Executable<'a, &'a [u8]> for DelimitedString {
+    fn execute(&self, s: &'a [u8], o: usize) -> Response<&'a [u8]> {
         let r = self.parse_only(s, o);
 
         match r.v {
-            Some(_) => response(Some(StringLiteral(s, o + 1, r.o - 1)), r.o, r.c),
+            Some(_) => response(Some(&s[o + 1..r.o - 1]), r.o, r.c),
             _ => response(None, r.o, r.c)
         }
     }
 }
 
-impl<'a> Parsable<'a, StringLiteral<'a>> for DelimitedString {
+impl<'a> Parsable<'a, &'a [u8]> for DelimitedString {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
         let c = '\\'.then_right(any()).or(any().satisfy(Box::new(|b| *b as char != '"')));
         let p = '"'.then(c.optrep()).then('"');

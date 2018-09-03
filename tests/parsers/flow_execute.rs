@@ -2,7 +2,6 @@ extern crate parsecute;
 
 use parsecute::parsers::basic::*;
 use parsecute::parsers::execution::*;
-use parsecute::parsers::monadic::*;
 use parsecute::parsers::flow::*;
 use parsecute::parsers::response::*;
 
@@ -125,18 +124,6 @@ fn it_parse_with_take_while_consumed() {
 
     assert_eq!(true, r.execute(&"aaaab".as_bytes(), 0).fold(
         |_, _, b| b,
-        |_, _| panic!("Parse error"),
-    ));
-}
-
-#[test]
-fn it_parse_with_macro_seq() {
-    let r = seq!(
-        (any()) ~> (any()) <~ (any()) >> (|a| a)
-    );
-
-    assert_eq!('b', r.execute(&"abc".as_bytes(), 0).fold(
-        |a, _, _| a as char,
         |_, _| panic!("Parse error"),
     ));
 }

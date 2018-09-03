@@ -342,21 +342,3 @@ impl<'a> Parsable<'a, ()> for Skip {
 }
 
 // -------------------------------------------------------------------------------------------------
-
-#[macro_export]
-macro_rules! seq {
-    (($l:expr))              => { $l                          };
-    (($l:expr) <~ $($r:tt)+) => { $l.then_left(seq!($($r)+))  };
-    (($l:expr) ~> $($r:tt)+) => { $l.then_right(seq!($($r)+)) };
-    (($l:expr) ~  $($r:tt)+) => { $l.then(seq!($($r)+))       };
-    (($l:expr) >> $r:expr)   => { $l.fmap(Box::new($r))       };
-}
-
-#[macro_export]
-macro_rules! cases {
-    (($l:expr))              => { $l                          };
-    (($l:expr) |  $($r:tt)+) => { $l.or(cases!($($r)+))       };
-    (($l:expr) >> $r:expr)   => { $l.fmap(Box::new($r))       };
-}
-
-// -------------------------------------------------------------------------------------------------

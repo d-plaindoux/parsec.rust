@@ -14,12 +14,6 @@ pub fn parsec<'a, A>(p: Box<Executable<'a, A> + 'a>) -> Parsec<'a, A> {
     Parsec::<'a>(p)
 }
 
-#[macro_export]
-macro_rules! parsec {
-    ($a:lifetime, $e:expr) => { Parsec::<$a>(Box::new($e)) };
-    ($e:expr) => { parsec(Box::new($e)) };
-}
-
 // -------------------------------------------------------------------------------------------------
 // Basic Parser executable implementation
 // -------------------------------------------------------------------------------------------------

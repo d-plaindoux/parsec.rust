@@ -13,6 +13,7 @@ use parsecute::parsers::literal::*;
 use parsecute::parsers::monadic::*;
 use parsecute::parsers::parser::*;
 use parsecute::parsers::response::*;
+
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -31,9 +32,8 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
         seq!((skip(" \n\r\t".to_string())) ~> (p))
     }
 
-    fn to_str(s: StringLiteral) -> &str {
-        let StringLiteral(s, o, n) = s;
-        std::str::from_utf8(&s[o..n]).unwrap()
+    fn to_str(s: &[u8]) -> &str {
+        std::str::from_utf8(s).unwrap()
     }
 
     #[inline]
@@ -82,7 +82,7 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
                     'f' => parsec!('a, "false".fmap(Box::new(|_| JsonValue::Boolean(false)))),
                     't' => parsec!('a, "true".fmap(Box::new(|_| JsonValue::Boolean(true)))),
                     'n' => parsec!('a, "null".fmap(Box::new(|_| JsonValue::Null()))),
-                    _   => parsec!('a, float().fmap(Box::new(|v| JsonValue::Num(v.to_native_value())))),
+                    _   => parsec!('a, float().fmap(Box::new(|v| JsonValue::Num(v.to_f64())))),
                 }
             })))
         );
