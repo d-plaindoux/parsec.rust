@@ -6,11 +6,11 @@ use parsers::response::*;
 // Basic Parser used for type simplification
 // -------------------------------------------------------------------------------------------------
 
-pub struct Parsec<'a, A>(pub Box<Executable<'a, A> + 'a>);
+pub struct Parsec<'a, A>(pub Box<dyn Executable<'a, A> + 'a>);
 
 impl<'a, A> Parser<A> for Parsec<'a, A> {}
 
-pub fn parsec<'a, A>(p: Box<Executable<'a, A> + 'a>) -> Parsec<'a, A> {
+pub fn parsec<'a, A>(p: Box<dyn Executable<'a, A> + 'a>) -> Parsec<'a, A> {
     Parsec::<'a>(p)
 }
 
