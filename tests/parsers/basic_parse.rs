@@ -95,7 +95,7 @@ fn it_parse_with_try_any_success() {
 
 #[test]
 fn it_parse_with_satisfy_any_reject() {
-    let r = satisfy(any(), Box::new(|c| *c as char == 'a'));
+    let r = satisfy(any(), |c| *c as char == 'a');
 
     assert_eq!(true, r.parse_only(&"b".as_bytes(), 0).fold(
         |_, _, _| panic!("Parse error"),
@@ -105,7 +105,7 @@ fn it_parse_with_satisfy_any_reject() {
 
 #[test]
 fn it_parse_with_satisfy_any_success_unwrap() {
-    let r = satisfy(any(), Box::new(|c| *c as char == 'a'));
+    let r = satisfy(any(), |c| *c as char == 'a');
 
     assert_eq!(true, r.parse_only(&"a".as_bytes(), 0).fold(
         |_, s, _| s == 1,
@@ -115,7 +115,7 @@ fn it_parse_with_satisfy_any_success_unwrap() {
 
 #[test]
 fn it_parse_with_satisfy_any_success() {
-    let r = satisfy(any(), Box::new(|c| *c as char == 'a'));
+    let r = satisfy(any(), |c| *c as char == 'a');
 
     assert_eq!(true, r.parse_only(&"a".as_bytes(), 0).fold(
         |_, _, b| b,
@@ -125,7 +125,7 @@ fn it_parse_with_satisfy_any_success() {
 
 #[test]
 fn it_parse_with_lazy_any_success() {
-    let r = lazy(Box::new(|| any()));
+    let r = lazy(|| any());
 
     assert_eq!(true, r.parse_only(&"a".as_bytes(), 0).fold(
         |_, _, b| b,
@@ -135,7 +135,7 @@ fn it_parse_with_lazy_any_success() {
 
 #[test]
 fn it_parse_with_lazy_any_reject() {
-    let r = lazy(Box::new(|| any()));
+    let r = lazy(|| any());
 
     assert_eq!(false, r.parse_only(&"".as_bytes(), 0).fold(
         |_, _, _| panic!("Parse error"),

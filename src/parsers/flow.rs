@@ -15,7 +15,7 @@ impl<E, R, A> Parser<A> for Or<E, R, A> where E: Parser<A>, R: Parser<A> {}
 
 
 pub trait OrOperation<E, R, A, OR> where E: Parser<A>, R: Parser<A> {
-    fn or(self, R) -> OR;
+    fn or(self, a: R) -> OR;
 }
 
 impl<E, R, A> OrOperation<E, R, A, Or<E, R, A>> for E where E: Parser<A>, R: Parser<A> {
@@ -32,7 +32,7 @@ pub struct And<E, A, R, B>(pub E, pub R, PhantomData<A>, PhantomData<B>) where E
 impl<E, A, R, B> Parser<(A, B)> for And<E, A, R, B> where E: Parser<A>, R: Parser<B> {}
 
 pub trait AndOperation<E, A, R, B> where E: Parser<A>, R: Parser<B> {
-    fn then(self, R) -> And<E, A, R, B>;
+    fn then(self, b: R) -> And<E, A, R, B>;
     fn then_left(self, b: R) -> FMap<And<E, A, R, B>, (A, B), A>;
     fn then_right(self, b: R) -> FMap<And<E, A, R, B>, (A, B), B>;
 }
@@ -44,11 +44,11 @@ impl<E, A, R, B> AndOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B>
     }
     #[inline]
     fn then_left(self, b: R) -> FMap<And<E, A, R, B>, (A, B), A> {
-        And(self, b, PhantomData, PhantomData).fmap(Box::new(|(a, _)| a))
+        And(self, b, PhantomData, PhantomData).fmap(|(a, _)| a)
     }
     #[inline]
     fn then_right(self, b: R) -> FMap<And<E, A, R, B>, (A, B), B> {
-        And(self, b, PhantomData, PhantomData).fmap(Box::new(|(_, b)| b))
+        And(self, b, PhantomData, PhantomData).fmap(|(_, b)| b)
     }
 }
 
@@ -106,17 +106,17 @@ impl<E, A> RepeatOperation<E, A> for E where E: Parser<A> {
 
 //  -------------------------------------------------------------------------------------------------
 
-pub type TypeWhile = Repeat<Satisfy<Any, u8>, u8>;
+pub type TakeWhile = Repeat<Satisfy<Any, u8>, u8>;
 
 #[inline]
-pub fn take_while(f: Box<(Fn(&u8) -> bool)>) -> TypeWhile {
+pub fn take_while<F:'static>(f: F) -> TakeWhile where F: Fn(&u8) -> bool {
     any().satisfy(f).optrep()
 }
 
 pub type TakeOne = Try<Satisfy<Any, u8>, u8>;
 
 #[inline]
-pub fn take_one(f: Box<(Fn(&u8) -> bool)>) -> TakeOne {
+pub fn take_one<F:'static>(f: F) -> TakeOne where F: Fn(&u8) -> bool {
     do_try(any().satisfy(f))
 }
 

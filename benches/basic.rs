@@ -64,7 +64,7 @@ fn basic_fmap(b: &mut Bencher) {
     let string = "a".repeat(1024 * 1024);
     let data = string.as_bytes();
     b.bytes = data.len() as u64;
-    parse('a'.fmap(Box::new(|_| 1)).rep(), b, data)
+    parse('a'.fmap(|_| 1).rep(), b, data)
 }
 
 // -------------------------------------------------------------------------------------------------

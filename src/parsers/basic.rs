@@ -77,18 +77,23 @@ pub struct Satisfy<E, A>(pub E, pub Box<Fn(&A) -> bool>) where E: Parser<A>;
 impl<E, A> Parser<A> for Satisfy<E, A> where E: Parser<A> {}
 
 #[inline]
-pub fn satisfy<E, A>(p: E, f: Box<Fn(&A) -> bool>) -> Satisfy<E, A> where E: Parser<A> {
-    Satisfy(p, f)
+pub fn satisfy<E, A, F:'static>(p: E, f: F) -> Satisfy<E, A> where E: Parser<A>, F: Fn(&A) -> bool {
+    Satisfy(p, Box::new(f))
 }
 
 pub trait SatisfyOperation<E, A> where E: Parser<A> {
     #[inline]
-    fn satisfy(self, f: Box<Fn(&A) -> bool>) -> Satisfy<E, A>;
+    fn satisfy<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool;
+    fn filter<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool;
 }
 
 impl<E, A> SatisfyOperation<E, A> for E where E: Parser<A> {
     #[inline]
-    fn satisfy(self, f: Box<(Fn(&A) -> bool)>) -> Satisfy<E, A> {
+    fn satisfy<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool {
+        satisfy(self, f)
+    }
+    #[inline]
+    fn filter<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool {
         satisfy(self, f)
     }
 }
@@ -100,8 +105,8 @@ pub struct Lazy<E, A>(pub Box<Fn() -> E>, pub PhantomData<A>) where E: Parser<A>
 impl<E, A> Parser<A> for Lazy<E, A> where E: Parser<A> {}
 
 #[inline]
-pub fn lazy<E, A>(p: Box<Fn() -> E>) -> Lazy<E, A> where E: Parser<A> {
-    Lazy(p, PhantomData)
+pub fn lazy<E, A, F:'static>(p: F) -> Lazy<E, A> where E: Parser<A>, F: Fn() -> E {
+    Lazy(Box::new(p), PhantomData)
 }
 
 // -------------------------------------------------------------------------------------------------

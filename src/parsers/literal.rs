@@ -221,7 +221,7 @@ impl<'a> Executable<'a, &'a [u8]> for DelimitedString {
 
 impl<'a> Parsable<'a, &'a [u8]> for DelimitedString {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let c = '\\'.then_right(any()).or(any().satisfy(Box::new(|b| *b as char != '"')));
+        let c = '\\'.then_right(any()).or(any().satisfy(|b| *b as char != '"'));
         let p = '"'.then(c.optrep()).then('"');
 
         p.parse_only(s, o)
@@ -233,7 +233,7 @@ impl<'a> Parsable<'a, &'a [u8]> for DelimitedString {
 impl<'a> Executable<'a, char> for DelimitedChar {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<char> {
         let p = '\''
-            .then_right("\\\'".to_string().fmap(Box::new(|_| '\'')).or(take_one(Box::new(|c| *c != '\'' as u8)).fmap(Box::new(|a| a as char))))
+            .then_right("\\\'".fmap(|_| '\'').or(take_one(|c| *c != '\'' as u8).fmap(|a| a as char)))
             .then_left('\'');
 
         p.execute(s, o)

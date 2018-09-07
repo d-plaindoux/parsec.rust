@@ -8,7 +8,7 @@ use parsecute::parsers::response::*;
 
 #[test]
 fn it_parse_with_fmap_success() {
-    let r = returns(1).fmap(Box::new(|a: u32| a.to_string()));
+    let r = returns(1).fmap(|a: u32| a.to_string());
 
     assert_eq!("1", r.execute(&"a".as_bytes(), 0).fold(
         |a, _, _| a,
@@ -18,7 +18,7 @@ fn it_parse_with_fmap_success() {
 
 #[test]
 fn it_parse_with_fmap_reject() {
-    let r = fail().fmap(Box::new(|a: u32| a.to_string()));
+    let r = fail().fmap(|a: u32| a.to_string());
 
     assert_eq!("0", r.execute(&"a".as_bytes(), 0).fold(
         |_, _, _| panic!("Parse error"),
@@ -28,7 +28,7 @@ fn it_parse_with_fmap_reject() {
 
 #[test]
 fn it_parse_with_bind_success() {
-    let r = returns(1).bind(Box::new(|a: u32| returns(a + 1)));
+    let r = returns(1).bind(|a: u32| returns(a + 1));
 
     assert_eq!(2, r.execute(&"a".as_bytes(), 0).fold(
         |a, _, _| a,
@@ -38,7 +38,7 @@ fn it_parse_with_bind_success() {
 
 #[test]
 fn it_parse_with_bind_reject() {
-    let r = returns(1).bind(Box::new(|_: u32| fail()));
+    let r = returns(1).bind(|_: u32| fail());
 
     assert_eq!(0, r.execute(&"a".as_bytes(), 0).fold(
         |_: u32, _, _| panic!("Parse error"),

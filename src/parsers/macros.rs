@@ -10,7 +10,7 @@ macro_rules! parsec {
 
 #[macro_export]
 macro_rules! lazy {
-    ($e:expr) => { lazy(Box::new(|| $e)) };
+    ($e:expr) => { lazy(|| $e) };
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -35,3 +35,19 @@ macro_rules! cases {
 }
 
 // -------------------------------------------------------------------------------------------------
+
+#[macro_export]
+macro_rules! foreach {
+    ($a:ident <- ($e:expr) if ($cond:expr) $($r:tt)+) => {{
+        foreach!($a <- ($e.filter(move |&$a| $cond)) $($r)+)
+    }};
+    ($a:ident <- ($e:expr) yield $result:expr) => {{
+        $e.map(move |$a| $result)
+    }};
+    ($a:ident <- ($e:expr) $($r:tt)+) => {{
+        $e.flat_map(move |$a| foreach!($($r)+))
+    }}
+}
+
+// -------------------------------------------------------------------------------------------------
+

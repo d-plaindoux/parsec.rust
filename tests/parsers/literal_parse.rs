@@ -102,7 +102,7 @@ fn it_parse_with_delimited_char() {
 
 #[test]
 fn it_parse_extracting_float() {
-    let p = "Hello<".to_string().then(float()).then('>').fmap(Box::new(|((_, b, ), _)| b));
+    let p = "Hello<".to_string().then(float()).then('>').fmap(|((_, b, ), _)| b);
 
     assert_eq!((), p.parse_only(&"Hello<42>".as_bytes(), 0).fold(
         |a, _, _| a,
@@ -112,8 +112,8 @@ fn it_parse_extracting_float() {
 
 #[test]
 fn it_parse_extracting_csv_items() {
-    let atom = || take_while(Box::new(|c| *c != ',' as u8));
-    let line = atom().then(','.then(atom()).fmap(Box::new(|(_, b)| b)).optrep());
+    let atom = || take_while(|c| *c != ',' as u8);
+    let line = atom().then(','.then(atom()).fmap(|(_, b)| b).optrep());
 
     assert_eq!((), line.parse_only(&"a,b,c,d".as_bytes(), 0).fold(
         |a, _, _| a,

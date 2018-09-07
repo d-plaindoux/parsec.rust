@@ -100,7 +100,7 @@ fn it_parse_with_rep_reject_empty() {
 
 #[test]
 fn it_parse_with_take_while() {
-    let r = take_while(Box::new(|a| *a as char != 'b'));
+    let r = take_while(|a| *a as char != 'b');
 
     assert_eq!(4, r.parse_only(&"aaaab".as_bytes(), 0).fold(
         |_, o, _| o,
@@ -110,7 +110,7 @@ fn it_parse_with_take_while() {
 
 #[test]
 fn it_parse_with_take_while_empty() {
-    let r = take_while(Box::new(|a| *a as char != 'b'));
+    let r = take_while(|a| *a as char != 'b');
 
     assert_eq!(0, r.parse_only(&"b".as_bytes(), 0).fold(
         |_, o, _| o,
@@ -120,7 +120,7 @@ fn it_parse_with_take_while_empty() {
 
 #[test]
 fn it_parse_with_take_while_consumed() {
-    let r = take_while(Box::new(|a| *a as char != 'b'));
+    let r = take_while(|a| *a as char != 'b');
 
     assert_eq!(true, r.parse_only(&"aaaab".as_bytes(), 0).fold(
         |_, _, b| b,

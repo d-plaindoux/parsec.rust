@@ -12,13 +12,18 @@ pub struct FMap<E, A, B>(E, Box<Fn(A) -> B>) where E: Parser<A>;
 impl<E, A, B> Parser<B> for FMap<E, A, B> where E: Parser<A> {}
 
 pub trait FMapOperation<E, A, B> where E: Parser<A> {
-    fn fmap(self, f: Box<(Fn(A) -> B)>) -> FMap<E, A, B>;
+    fn fmap<F: 'static>(self, f: F) -> FMap<E, A, B> where F: Fn(A) -> B;
+    fn flat_map<F: 'static>(self, f: F) -> FMap<E, A, B> where F: Fn(A) -> B;
 }
 
 impl<E, A, B> FMapOperation<E, A, B> for E where E: Parser<A> {
     #[inline]
-    fn fmap(self, f: Box<(Fn(A) -> B)>) -> FMap<E, A, B> {
-        FMap(self, f)
+    fn fmap<F: 'static>(self, f: F) -> FMap<E, A, B> where F: Fn(A) -> B {
+        FMap(self, Box::new(f))
+    }
+    #[inline]
+    fn flat_map<F: 'static>(self, f: F) -> FMap<E, A, B> where F: Fn(A) -> B {
+        FMap(self, Box::new(f))
     }
 }
 
@@ -29,13 +34,13 @@ pub struct Bind<E, A, R, B>(E, Box<Fn(A) -> R>, PhantomData<B>) where E: Parser<
 impl<E, A, R, B> Parser<B> for Bind<E, A, R, B> where E: Parser<A>, R: Parser<B> {}
 
 pub trait BindOperation<E, A, R, B> where E: Parser<A>, R: Parser<B> {
-    fn bind(self, f: Box<(Fn(A) -> R)>) -> Bind<E, A, R, B>;
+    fn bind<F: 'static>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R);
 }
 
 impl<E, A, R, B> BindOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B> {
     #[inline]
-    fn bind(self, f: Box<(Fn(A) -> R)>) -> Bind<E, A, R, B> {
-        Bind(self, f, PhantomData)
+    fn bind<F: 'static>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) {
+        Bind(self, Box::new(f), PhantomData)
     }
 }
 
