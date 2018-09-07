@@ -43,8 +43,8 @@ lookahead :: Parser<A> -> Parser<A>
 module `parsecute::parsers::monadics`
 
 ```rust
-fmap :: self:Parser<A> -> Box<(Fn(A) -> B)> -> Parser<B>
-bind :: self:Parser<A> -> Box<(Fn(A) -> Parser<B>)> -> Parser<B>
+fmap :: self:Parser<A> -> (Fn(A) -> B) -> Parser<B>
+bind :: self:Parser<A> -> (Fn(A) -> Parser<B>) -> Parser<B>
 ```
 
 ### Flow
@@ -57,8 +57,8 @@ or         :: self:Parser<A> -> Parser<A> -> Parser<A>
 opt        :: self:Parser<A> -> Parser<Option<A>>
 optrep     :: self:Parser<A> -> Parser<Vec<A>>
 rep        :: self:Parser<A> -> Parser<Vec<A>>
-take_while :: Box<(Fn(&u8) -> bool)> -> Parser<Vec<u8>>
-take_one   :: Box<(Fn(&u8) -> bool)> -> Parser<Option<u8>>
+take_while :: (Fn(&u8) -> bool) -> Parser<Vec<u8>>
+take_one   :: (Fn(&u8) -> bool) -> Parser<Option<u8>>
 ```
 
 ## Literals
@@ -81,8 +81,8 @@ char_delim   :: () -> Parser<char>
 // item ::= [^,]*
 // line ::= item (',' item)*
 
-let atom = || take_while(Box::new(|c| *c != ',' as u8));
-let line = atom().then(','.then(atom()).fmap(Box::new(|(_,b)| b)).optrep());
+let atom = || take_while(|c| *c != ',' as u8);
+let line = atom().then(','.then(atom()).fmap(|(_,b)| b).optrep());
 ```
 
 # Benchmarks
