@@ -107,31 +107,21 @@ test literal_float            ... bench:      15,928 ns/iter (+/- 3,338) = 771 M
 ### The Parser 
 
 ````rust
-pub enum JsonValue<'a> {
-    Null(),
-    Str(&'a str),
-    Num(f64),
-    Boolean(bool),
-    Array(Vec<JsonValue<'a>>),
-    Object(HashMap<&'a str, JsonValue<'a>>),
-}
-
 fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     #[inline]
     fn spaces<E, A>(p: E) -> FMap<And<Skip, (), E, A>, ((), A), A> where E: Parser<A> {
         seq!((skip(" \n\r\t".to_string())) ~> (p))
     }
 
-    fn to_str(s: StringLiteral) -> &str {
-        let StringLiteral(s, o, n) = s;
-        std::str::from_utf8(&s[o..n]).unwrap()
+    fn to_str(s: &[u8]) -> &str {
+        std::str::from_utf8(s).unwrap()
     }
 
     #[inline]
     fn object<'a>() -> Parsec<'a, JsonValue<'a>> {
         let attribute = || seq!((seq!((spaces(delimited_string())) <~ (spaces(':')))) ~ (json::<'a>()));
         let attributes = seq!((attribute()) ~ (seq!((spaces(',')) ~> (attribute())).optrep())).opt();
-        let parser = seq!(('{') ~> (attributes) <~ (spaces('}'))).fmap(Box::new(|v| {
+        let parser = seq!(('{') ~> (attributes) <~ (spaces('}'))).fmap(|v| {
             let mut r = HashMap::default();
             if let Some(((k, e), v)) = v {
                 r.insert(to_str(k), e);
@@ -140,7 +130,7 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
                 }
             }
             JsonValue::Object(r)
-        }));
+        });
 
         parsec!('a, parser)
     }
@@ -148,7 +138,7 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     #[inline]
     fn array<'a>() -> Parsec<'a, JsonValue<'a>> {
         let elements = seq!((json::<'a>()) ~ (seq!((spaces(',')) ~> (json::<'a>())).optrep())).opt();
-        let parser = seq!(('[') ~> (elements) <~ (spaces(']'))).fmap(Box::new(|v| {
+        let parser = seq!(('[') ~> (elements) <~ (spaces(']'))).fmap(|v| {
             if let Some((e, v)) = v {
                 let mut r = v;
                 r.insert(0, e);
@@ -156,7 +146,7 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
             } else {
                 JsonValue::Array(Vec::default())
             }
-        }));
+        });
 
         parsec!('a, parser)
     }
@@ -165,17 +155,17 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     fn json<'a>() -> Parsec<'a, JsonValue<'a>> {
         let parser = lazy!(
             // This trigger should be done automatically in the next version hiding this ugly parse type impersonation
-            spaces(lookahead(any()).bind(Box::new(|c| {
+            spaces(lookahead(any()).bind(|c| {
                 match c as char {
                     '{' => object::<'a>(),
                     '[' => array::<'a>(),
-                    '"' => parsec!('a, delimited_string().fmap(Box::new(|v| JsonValue::Str(to_str(v))))),
-                    'f' => parsec!('a, "false".fmap(Box::new(|_| JsonValue::Boolean(false)))),
-                    't' => parsec!('a, "true".fmap(Box::new(|_| JsonValue::Boolean(true)))),
-                    'n' => parsec!('a, "null".fmap(Box::new(|_| JsonValue::Null()))),
-                    _   => parsec!('a, float().fmap(Box::new(|v| JsonValue::Num(v.to_native_value())))),
+                    '"' => parsec!('a, delimited_string().fmap(|v| JsonValue::Str(to_str(v)))),
+                    'f' => parsec!('a, "false".fmap(|_| JsonValue::Boolean(false))),
+                    't' => parsec!('a, "true".fmap(|_| JsonValue::Boolean(true))),
+                    'n' => parsec!('a, "null".fmap(|_| JsonValue::Null())),
+                    _   => parsec!('a, float().fmap(|v| JsonValue::Num(v.to_f64()))),
                 }
-            })))
+            }))
         );
 
         parsec!('a, parser)
