@@ -13,7 +13,6 @@ use parsecute::parsers::literal::*;
 use parsecute::parsers::monadic::*;
 use parsecute::parsers::parser::*;
 use parsecute::parsers::response::*;
-
 use std::collections::HashMap;
 
 #[derive(Debug)]

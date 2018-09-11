@@ -15,19 +15,19 @@ fn it_parse_any_macro_seq() {
         |_, _| panic!("Parse error"),
     ));
 }
-/* TODO
+
 #[test]
 fn it_parse_any_then_any_macro_seq() {
     let r = foreach!(
-        a <- (any())
+        ('\'')
         b <- (any())
-        c <- (any())
-        yield b
+        if (b as char != '\'')
+        ('\'')
+        yield (b)
     );
 
-    assert_eq!('b', r.execute(&"[b]".as_bytes(), 0).fold(
-        |a, _, _| a as char,
+    assert_eq!('b', r.execute(&"'b'".as_bytes(), 0).fold(
+        |b, _, _| b as char,
         |_, _| panic!("Parse error"),
     ));
 }
-*/
