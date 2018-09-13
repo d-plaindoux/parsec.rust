@@ -12,17 +12,22 @@ pub struct FMap<E, A, B>(E, Box<Fn(A) -> B>) where E: Parser<A>;
 impl<E, A, B> Parser<B> for FMap<E, A, B> where E: Parser<A> {}
 
 pub trait FMapOperation<E, A, B> where E: Parser<A> {
-    fn fmap<F: 'static>(self, f: F) -> FMap<E, A, B> where F: Fn(A) -> B;
-    fn map<F: 'static>(self, f: F) -> FMap<E, A, B> where F: Fn(A) -> B;
+    fn fmap_box(self, f: Box<Fn(A) -> B>) -> FMap<E, A, B>;
+    fn fmap<F>(self, f: F) -> FMap<E, A, B> where F: (Fn(A) -> B) + 'static;
+    fn map<F>(self, f: F) -> FMap<E, A, B> where F: (Fn(A) -> B) + 'static;
 }
 
 impl<E, A, B> FMapOperation<E, A, B> for E where E: Parser<A> {
     #[inline]
-    fn fmap<F: 'static>(self, f: F) -> FMap<E, A, B> where F: Fn(A) -> B {
+    fn fmap_box(self, f: Box<Fn(A) -> B>) -> FMap<E, A, B> {
+        FMap(self, f)
+    }
+    #[inline]
+    fn fmap<F>(self, f: F) -> FMap<E, A, B> where F: (Fn(A) -> B) + 'static {
         FMap(self, Box::new(f))
     }
     #[inline]
-    fn map<F: 'static>(self, f: F) -> FMap<E, A, B> where F: Fn(A) -> B {
+    fn map<F>(self, f: F) -> FMap<E, A, B> where F: (Fn(A) -> B) + 'static {
         FMap(self, Box::new(f))
     }
 }
@@ -34,17 +39,17 @@ pub struct Bind<E, A, R, B>(E, Box<Fn(A) -> R>, PhantomData<B>) where E: Parser<
 impl<E, A, R, B> Parser<B> for Bind<E, A, R, B> where E: Parser<A>, R: Parser<B> {}
 
 pub trait BindOperation<E, A, R, B> where E: Parser<A>, R: Parser<B> {
-    fn bind<F: 'static>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R);
-    fn flat_map<F: 'static>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R);
+    fn bind<F>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) + 'static;
+    fn flat_map<F>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) + 'static;
 }
 
 impl<E, A, R, B> BindOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B> {
     #[inline]
-    fn bind<F: 'static>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) {
+    fn bind<F>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) + 'static {
         Bind(self, Box::new(f), PhantomData)
     }
     #[inline]
-    fn flat_map<F: 'static>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) {
+    fn flat_map<F>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) + 'static {
         self.bind(f)
     }
 }
