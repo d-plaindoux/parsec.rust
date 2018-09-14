@@ -37,8 +37,7 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
 
     #[inline]
     fn object<'a>() -> Parsec<'a, JsonValue<'a>> {
-        let attribute = || spaces(delimited_string()).bind(|s| spaces(':').then_right(json::<'a>().fmap(move |v| (s,v))));
-            //seq!((seq!((spaces(delimited_string())) <~ (spaces(':')))) ~ (json::<'a>()));
+        let attribute = || seq!((seq!((spaces(delimited_string())) <~ (spaces(':')))) ~ (json::<'a>()));
         let attributes = seq!((attribute()) ~ (seq!((spaces(',')) ~> (attribute())).optrep())).opt();
         let parser = seq!(('{') ~> (attributes) <~ (spaces('}'))).fmap(|v| {
             let mut r = HashMap::default();

@@ -39,11 +39,16 @@ pub struct Bind<E, A, R, B>(E, Box<Fn(A) -> R>, PhantomData<B>) where E: Parser<
 impl<E, A, R, B> Parser<B> for Bind<E, A, R, B> where E: Parser<A>, R: Parser<B> {}
 
 pub trait BindOperation<E, A, R, B> where E: Parser<A>, R: Parser<B> {
+    fn bind_box(self, f: Box<Fn(A) -> R>) -> Bind<E, A, R, B>;
     fn bind<F>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) + 'static;
     fn flat_map<F>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) + 'static;
 }
 
 impl<E, A, R, B> BindOperation<E, A, R, B> for E where E: Parser<A>, R: Parser<B> {
+    #[inline]
+    fn bind_box(self, f: Box<Fn(A) -> R>) -> Bind<E, A, R, B> {
+        Bind(self, f, PhantomData)
+    }
     #[inline]
     fn bind<F>(self, f: F) -> Bind<E, A, R, B> where F: (Fn(A) -> R) + 'static {
         Bind(self, Box::new(f), PhantomData)
