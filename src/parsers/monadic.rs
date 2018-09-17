@@ -24,11 +24,11 @@ impl<E, A, B> FMapOperation<E, A, B> for E where E: Parser<A> {
     }
     #[inline]
     fn fmap<F>(self, f: F) -> FMap<E, A, B> where F: (Fn(A) -> B) + 'static {
-        FMap(self, Box::new(f))
+        self.fmap_box(Box::new(f))
     }
     #[inline]
     fn map<F>(self, f: F) -> FMap<E, A, B> where F: (Fn(A) -> B) + 'static {
-        FMap(self, Box::new(f))
+        self.fmap_box(Box::new(f))
     }
 }
 

@@ -57,7 +57,6 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     fn array<'a>() -> Parsec<'a, JsonValue<'a>> {
         let elements = seq!((json::<'a>()) ~ (seq!((spaces(',')) ~> (json::<'a>())).optrep())).opt();
         let parser = seq!(('[') ~> (elements) <~ (spaces(']'))).fmap(|v| {
-
             if let Some((e, v)) = v {
                 let mut r = v;
                 r.insert(0, e);
