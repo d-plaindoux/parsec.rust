@@ -1,9 +1,9 @@
 use core::marker::PhantomData;
-use parsers::basic::*;
-use parsers::execution::*;
-use parsers::monadic::*;
-use parsers::parser::*;
-use parsers::response::*;
+use crate::parsers::basic::*;
+use crate::parsers::execution::*;
+use crate::parsers::monadic::*;
+use crate::parsers::parser::*;
+use crate::parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------
 // Parser type definition

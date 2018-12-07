@@ -72,7 +72,6 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     #[inline]
     fn json<'a>() -> Parsec<'a, JsonValue<'a>> {
         let parser = lazy!(
-            // This trigger should be done automatically in the next version hiding this ugly parse type impersonation
             spaces(lookahead(any()).bind(|c| {
                 match c as char {
                     '{' => object::<'a>(),

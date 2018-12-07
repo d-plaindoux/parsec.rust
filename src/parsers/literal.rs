@@ -1,9 +1,9 @@
-use parsers::basic::*;
-use parsers::execution::*;
-use parsers::flow::*;
-use parsers::monadic::*;
-use parsers::parser::*;
-use parsers::response::*;
+use crate::parsers::basic::*;
+use crate::parsers::execution::*;
+use crate::parsers::flow::*;
+use crate::parsers::monadic::*;
+use crate::parsers::parser::*;
+use crate::parsers::response::*;
 use std::ops::Deref;
 use std::ops::Range;
 

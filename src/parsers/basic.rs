@@ -1,7 +1,7 @@
 use core::marker::PhantomData;
-use parsers::execution::*;
-use parsers::parser::*;
-use parsers::response::*;
+use crate::parsers::execution::*;
+use crate::parsers::parser::*;
+use crate::parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------
 // Parser type definition
@@ -84,6 +84,7 @@ pub fn satisfy<E, A, F:'static>(p: E, f: F) -> Satisfy<E, A> where E: Parser<A>,
 pub trait SatisfyOperation<E, A> where E: Parser<A> {
     #[inline]
     fn satisfy<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool;
+    #[inline]
     fn filter<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool;
 }
 

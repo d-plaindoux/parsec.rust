@@ -1,6 +1,6 @@
-use parsers::execution::*;
-use parsers::parser::*;
-use parsers::response::*;
+use crate::parsers::execution::*;
+use crate::parsers::parser::*;
+use crate::parsers::response::*;
 use std::marker::PhantomData;
 
 // -------------------------------------------------------------------------------------------------

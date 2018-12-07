@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Didier Plaindoux <d.plaindoux@free.fr>"]
 description = "Rust Parser Combinators"
 repository = "https://github.com/d-plaindoux/parsec.rust"
+edition = "2018"
 
 [dependencies]
 bencher = "0.1"

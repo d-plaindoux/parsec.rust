@@ -1,5 +1,5 @@
-use parsers::parser::*;
-use parsers::response::*;
+use crate::parsers::parser::Parser;
+use crate::parsers::response::Response;
 
 // -------------------------------------------------------------------------------------------------
 // Executable type definition
