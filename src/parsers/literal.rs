@@ -1,11 +1,12 @@
+use std::ops::Deref;
+use std::ops::Range;
+
 use crate::parsers::basic::*;
 use crate::parsers::execution::*;
 use crate::parsers::flow::*;
 use crate::parsers::monadic::*;
 use crate::parsers::parser::*;
 use crate::parsers::response::*;
-use std::ops::Deref;
-use std::ops::Range;
 
 //  -------------------------------------------------------------------------------------------------
 // Parser type definition
@@ -32,7 +33,6 @@ impl<'a> Parser<&'a [u8]> for DelimitedString {}
 pub struct DelimitedChar();
 
 impl Parser<char> for DelimitedChar {}
-
 
 //  -------------------------------------------------------------------------------------------------
 
@@ -65,7 +65,7 @@ impl<'a> Executable<'a, u8> for u8 {
         let r = any().execute(s, o);
         match r.v {
             Some(a) if { *self == a } => r,
-            _ => response(None, o, false)
+            _ => response(None, o, false),
         }
     }
 }
@@ -75,7 +75,7 @@ impl<'a> Parsable<'a, u8> for u8 {
         let r = any().execute(s, o);
         match r.v {
             Some(a) if { *self == a } => response(Some(()), r.o, r.c),
-            _ => response(None, o, false)
+            _ => response(None, o, false),
         }
     }
 }
@@ -87,7 +87,7 @@ impl<'a> Executable<'a, char> for char {
         let r = any().execute(s, o); // TODO unicode to be managed here
         match r.v {
             Some(a) if { *self == a as char } => response(Some(a as char), r.o, r.c),
-            _ => response(None, o, false)
+            _ => response(None, o, false),
         }
     }
 }
@@ -97,7 +97,7 @@ impl<'a> Parsable<'a, char> for char {
         let r = any().execute(s, o); // TODO unicode to be managed here
         match r.v {
             Some(a) if { *self == a as char } => response(Some(()), r.o, r.c),
-            _ => response(None, o, false)
+            _ => response(None, o, false),
         }
     }
 }
@@ -116,7 +116,7 @@ impl<'a> Executable<'a, char> for Range<char> {
                     response(None, o, false)
                 }
             }
-            _ => response(None, o, false)
+            _ => response(None, o, false),
         }
     }
 }
@@ -133,7 +133,7 @@ impl<'a> Parsable<'a, char> for Range<char> {
                     response(None, o, false)
                 }
             }
-            _ => response(None, o, false)
+            _ => response(None, o, false),
         }
     }
 }
@@ -160,9 +160,8 @@ impl<'a> Executable<'a, &'a str> for &'a str {
 
         match r.v {
             Some(_) => response(Some(self), r.o, r.c),
-            _ => response(None, r.o, r.c)
+            _ => response(None, r.o, r.c),
         }
-
     }
 }
 
@@ -192,14 +191,16 @@ impl<'a> Executable<'a, &'a [u8]> for Float {
 
         match r.v {
             Some(_) => response(Some(&s[o..r.o]), r.o, r.c),
-            _ => response(None, r.o, r.c)
+            _ => response(None, r.o, r.c),
         }
     }
 }
 
 impl<'a> Parsable<'a, &'a [u8]> for Float {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let p = '+'.or('-').opt()
+        let p = '+'
+            .or('-')
+            .opt()
             .then(('0'..'9').rep())
             .then('.'.then(('0'..'9').rep()).opt());
 
@@ -214,14 +215,16 @@ impl<'a> Executable<'a, &'a [u8]> for DelimitedString {
 
         match r.v {
             Some(_) => response(Some(&s[o + 1..r.o - 1]), r.o, r.c),
-            _ => response(None, r.o, r.c)
+            _ => response(None, r.o, r.c),
         }
     }
 }
 
 impl<'a> Parsable<'a, &'a [u8]> for DelimitedString {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let c = '\\'.then_right(any()).or(any().satisfy(|b| *b as char != '"'));
+        let c = '\\'
+            .then_right(any())
+            .or(any().satisfy(|b| *b as char != '"'));
         let p = '"'.then(c.optrep()).then('"');
 
         p.parse_only(s, o)
@@ -233,7 +236,11 @@ impl<'a> Parsable<'a, &'a [u8]> for DelimitedString {
 impl<'a> Executable<'a, char> for DelimitedChar {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<char> {
         let p = '\''
-            .then_right("\\\'".fmap(|_| '\'').or(take_one(|c| *c != '\'' as u8).fmap(|a| a as char)))
+            .then_right(
+                "\\\'"
+                    .fmap(|_| '\'')
+                    .or(take_one(|c| *c != '\'' as u8).fmap(|a| a as char)),
+            )
             .then_left('\'');
 
         p.execute(s, o)

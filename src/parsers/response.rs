@@ -1,7 +1,8 @@
 pub struct Response<A> {
-    pub v: Option<A>, // None for reject and Some(?) for a success
+    pub v: Option<A>,
+    // None for reject and Some(?) for a success
     pub o: usize,
-    pub c: bool
+    pub c: bool,
 }
 
 #[inline]
@@ -24,7 +25,7 @@ impl<A, B> FoldResponse<A, B> for Response<A> {
     fn fold_fn(self, success: &Fn(A, usize, bool) -> B, reject: &Fn(usize, bool) -> B) -> B {
         match self.v {
             Some(a) => success(a, self.o, self.c),
-            _ => reject(self.o, self.c)
+            _ => reject(self.o, self.c),
         }
     }
 
@@ -37,7 +38,7 @@ impl<A, B> FMapResponse<A, B> for Response<A> {
     fn fmap(self, f: fn(A) -> B) -> Response<B> {
         match self.v {
             Some(a) => response(Some(f(a)), self.o, self.c),
-            None => response(None, self.o, self.c)
+            None => response(None, self.o, self.c),
         }
     }
 }

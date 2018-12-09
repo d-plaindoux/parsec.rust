@@ -1,4 +1,5 @@
 use core::marker::PhantomData;
+
 use crate::parsers::execution::*;
 use crate::parsers::parser::*;
 use crate::parsers::response::*;
@@ -50,63 +51,101 @@ pub fn eos() -> Eos {
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Try<E, A>(pub E, pub PhantomData<A>) where E: Parser<A>;
+pub struct Try<E, A>(pub E, pub PhantomData<A>)
+where
+    E: Parser<A>;
 
 impl<E, A> Parser<A> for Try<E, A> where E: Parser<A> {}
 
 #[inline]
-pub fn do_try<E, A>(p: E) -> Try<E, A> where E: Parser<A> {
+pub fn do_try<E, A>(p: E) -> Try<E, A>
+where
+    E: Parser<A>,
+{
     Try(p, PhantomData)
 }
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Lookahead<E, A>(pub E, pub PhantomData<A>) where E: Parser<A>;
+pub struct Lookahead<E, A>(pub E, pub PhantomData<A>)
+where
+    E: Parser<A>;
 
 impl<E, A> Parser<A> for Lookahead<E, A> where E: Parser<A> {}
 
 #[inline]
-pub fn lookahead<E, A>(p: E) -> Lookahead<E, A> where E: Parser<A> {
+pub fn lookahead<E, A>(p: E) -> Lookahead<E, A>
+where
+    E: Parser<A>,
+{
     Lookahead(p, PhantomData)
 }
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Satisfy<E, A>(pub E, pub Box<Fn(&A) -> bool>) where E: Parser<A>;
+pub struct Satisfy<E, A>(pub E, pub Box<Fn(&A) -> bool>)
+where
+    E: Parser<A>;
 
 impl<E, A> Parser<A> for Satisfy<E, A> where E: Parser<A> {}
 
 #[inline]
-pub fn satisfy<E, A, F:'static>(p: E, f: F) -> Satisfy<E, A> where E: Parser<A>, F: Fn(&A) -> bool {
+pub fn satisfy<E, A, F: 'static>(p: E, f: F) -> Satisfy<E, A>
+where
+    E: Parser<A>,
+    F: Fn(&A) -> bool,
+{
     Satisfy(p, Box::new(f))
 }
 
-pub trait SatisfyOperation<E, A> where E: Parser<A> {
+pub trait SatisfyOperation<E, A>
+where
+    E: Parser<A>,
+{
     #[inline]
-    fn satisfy<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool;
+    fn satisfy<F: 'static>(self, f: F) -> Satisfy<E, A>
+    where
+        F: Fn(&A) -> bool;
     #[inline]
-    fn filter<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool;
+    fn filter<F: 'static>(self, f: F) -> Satisfy<E, A>
+    where
+        F: Fn(&A) -> bool;
 }
 
-impl<E, A> SatisfyOperation<E, A> for E where E: Parser<A> {
+impl<E, A> SatisfyOperation<E, A> for E
+where
+    E: Parser<A>,
+{
     #[inline]
-    fn satisfy<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool {
+    fn satisfy<F: 'static>(self, f: F) -> Satisfy<E, A>
+    where
+        F: Fn(&A) -> bool,
+    {
         satisfy(self, f)
     }
     #[inline]
-    fn filter<F:'static>(self, f: F) -> Satisfy<E, A> where F: Fn(&A) -> bool {
+    fn filter<F: 'static>(self, f: F) -> Satisfy<E, A>
+    where
+        F: Fn(&A) -> bool,
+    {
         satisfy(self, f)
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-pub struct Lazy<E, A>(pub Box<Fn() -> E>, pub PhantomData<A>) where E: Parser<A>;
+pub struct Lazy<E, A>(pub Box<Fn() -> E>, pub PhantomData<A>)
+where
+    E: Parser<A>;
 
 impl<E, A> Parser<A> for Lazy<E, A> where E: Parser<A> {}
 
 #[inline]
-pub fn lazy<E, A, F:'static>(p: F) -> Lazy<E, A> where E: Parser<A>, F: Fn() -> E {
+pub fn lazy<E, A, F: 'static>(p: F) -> Lazy<E, A>
+where
+    E: Parser<A>,
+    F: Fn() -> E,
+{
     Lazy(Box::new(p), PhantomData)
 }
 
@@ -114,7 +153,10 @@ pub fn lazy<E, A, F:'static>(p: F) -> Lazy<E, A> where E: Parser<A>, F: Fn() -> 
 // Parser execution
 // -------------------------------------------------------------------------------------------------
 
-impl<'a, A> Executable<'a, A> for Return<A> where A: Copy {
+impl<'a, A> Executable<'a, A> for Return<A>
+where
+    A: Copy,
+{
     #[inline]
     fn execute(&self, _: &'a [u8], o: usize) -> Response<A> {
         let Return(v) = self;
@@ -192,47 +234,59 @@ impl<'a> Parsable<'a, ()> for Eos {
 
 // -------------------------------------------------------------------------------------------------
 
-impl<'a, A, E> Executable<'a, A> for Try<E, A> where E: Executable<'a, A> + Parser<A> {
+impl<'a, A, E> Executable<'a, A> for Try<E, A>
+where
+    E: Executable<'a, A> + Parser<A>,
+{
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Try(p, _) = self;
         let r = p.execute(s, o);
 
         match r.v {
             None => response(None, o, false),
-            _ => r
+            _ => r,
         }
     }
 }
 
-impl<'a, A, E> Parsable<'a, A> for Try<E, A> where E: Parsable<'a, A> + Parser<A> {
+impl<'a, A, E> Parsable<'a, A> for Try<E, A>
+where
+    E: Parsable<'a, A> + Parser<A>,
+{
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
         let Try(p, _) = self;
         let r = p.parse_only(s, o);
 
         match r.v {
             None => response(None, o, false),
-            _ => r
+            _ => r,
         }
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-impl<'a, A, E> Executable<'a, A> for Lookahead<E, A> where E: Executable<'a, A> + Parser<A> {
+impl<'a, A, E> Executable<'a, A> for Lookahead<E, A>
+where
+    E: Executable<'a, A> + Parser<A>,
+{
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Lookahead(p, _) = self;
         let r = p.execute(s, o);
 
         match r.v {
             Some(v) => response(Some(v), o, r.c),
-            _ => response(None, r.o, r.c)
+            _ => response(None, r.o, r.c),
         }
     }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-impl<'a, A, E> Executable<'a, A> for Satisfy<E, A> where E: Executable<'a, A> + Parser<A> {
+impl<'a, A, E> Executable<'a, A> for Satisfy<E, A>
+where
+    E: Executable<'a, A> + Parser<A>,
+{
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Satisfy(p, c) = self;
         let r = p.execute(s, o);
@@ -250,7 +304,10 @@ impl<'a, A, E> Executable<'a, A> for Satisfy<E, A> where E: Executable<'a, A> + 
     }
 }
 
-impl<'a, A, E> Parsable<'a, A> for Satisfy<E, A> where E: Executable<'a, A> + Parser<A> {
+impl<'a, A, E> Parsable<'a, A> for Satisfy<E, A>
+where
+    E: Executable<'a, A> + Parser<A>,
+{
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
         let Satisfy(p, c) = self;
         let r = p.execute(s, o);
@@ -270,7 +327,10 @@ impl<'a, A, E> Parsable<'a, A> for Satisfy<E, A> where E: Executable<'a, A> + Pa
 
 // -------------------------------------------------------------------------------------------------
 
-impl<'a, A, E> Executable<'a, A> for Lazy<E, A> where E: Executable<'a, A> + Parser<A> {
+impl<'a, A, E> Executable<'a, A> for Lazy<E, A>
+where
+    E: Executable<'a, A> + Parser<A>,
+{
     #[inline]
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Lazy(p, _) = self;
@@ -279,7 +339,10 @@ impl<'a, A, E> Executable<'a, A> for Lazy<E, A> where E: Executable<'a, A> + Par
     }
 }
 
-impl<'a, A, E> Parsable<'a, A> for Lazy<E, A> where E: Parsable<'a, A> + Parser<A> {
+impl<'a, A, E> Parsable<'a, A> for Lazy<E, A>
+where
+    E: Parsable<'a, A> + Parser<A>,
+{
     #[inline]
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
         let Lazy(p, _) = self;
@@ -288,6 +351,4 @@ impl<'a, A, E> Parsable<'a, A> for Lazy<E, A> where E: Parsable<'a, A> + Parser<
     }
 }
 
-
 // -------------------------------------------------------------------------------------------------
-

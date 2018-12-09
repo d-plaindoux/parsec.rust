@@ -2,15 +2,21 @@
 
 #[macro_export]
 macro_rules! parsec {
-    ($a:lifetime, $e:expr) => { Parsec::<$a>(Box::new($e)) };
-    ($e:expr) => { parsec(Box::new($e)) };
+    ($a:lifetime, $e:expr) => {
+        Parsec::<$a>(Box::new($e))
+    };
+    ($e:expr) => {
+        parsec(Box::new($e))
+    };
 }
 
 // -------------------------------------------------------------------------------------------------
 
 #[macro_export]
 macro_rules! lazy {
-    ($e:expr) => { lazy(|| $e) };
+    ($e:expr) => {
+        lazy(|| $e)
+    };
 }
 
 // -------------------------------------------------------------------------------------------------

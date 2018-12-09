@@ -1,12 +1,12 @@
-pub mod data;
-pub mod response;
-pub mod parser;
-pub mod execution;
-pub mod core;
 pub mod basic;
-pub mod monadic;
+pub mod core;
+pub mod data;
+pub mod execution;
 pub mod flow;
 pub mod literal;
+pub mod monadic;
+pub mod parser;
+pub mod response;
 
 #[macro_use]
 pub mod macros;
