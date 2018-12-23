@@ -113,12 +113,12 @@ where
     E: Executable<'a, A> + Parser<A>,
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<B> {
-        let FMap(p, f) = self;
-        let r = p.execute(s, o);
+        let FMap(parser, function) = self;
+        let result = parser.execute(s, o);
 
-        match r.v {
-            Some(v) => response(Some(f(v)), r.o, r.c),
-            _ => response(None, r.o, r.c),
+        match result.v {
+            Some(value) => response(Some(function(value)), result.o, result.c),
+            _ => response(None, result.o, result.c),
         }
     }
 }
@@ -128,12 +128,12 @@ where
     E: Parsable<'a, A> + Parser<A>,
 {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let FMap(p, _) = self;
-        let r = p.parse_only(s, o);
+        let FMap(parser, _) = self;
+        let result = parser.parse_only(s, o);
 
-        match r.v {
-            Some(_) => response(Some(()), r.o, r.c),
-            _ => response(None, r.o, r.c),
+        match result.v {
+            Some(_) => response(Some(()), result.o, result.c),
+            _ => response(None, result.o, result.c),
         }
     }
 }

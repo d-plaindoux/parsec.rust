@@ -2,14 +2,14 @@
 extern crate bencher;
 extern crate parsecute;
 
-use bencher::{Bencher, black_box};
+use bencher::{black_box, Bencher};
 use parsecute::parsers::basic::*;
 use parsecute::parsers::execution::*;
 use parsecute::parsers::flow::*;
 use parsecute::parsers::literal::*;
 use parsecute::parsers::monadic::*;
-use parsecute::parsers::response::*;
 use parsecute::parsers::parser::Parser;
+use parsecute::parsers::response::*;
 
 // -------------------------------------------------------------------------------------------------
 // Basic benchmarks
@@ -91,21 +91,35 @@ fn literal_float(b: &mut Bencher) {
 // Main parse function used for benchmarking
 // -------------------------------------------------------------------------------------------------
 
-fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8]) where E: Executable<'a, A> + Parser<A> {
+fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8])
+where
+    E: Executable<'a, A> + Parser<A>,
+{
     let r = p.then(eos());
 
     b.iter(|| {
         let buffer = black_box(buffer);
 
         match r.execute(buffer, 0) {
-            Response { v: Some(_), o: _, c: _ } => (),
+            Response {
+                v: Some(_),
+                o: _,
+                c: _,
+            } => (),
             Response { v: None, o, c: _ } => panic!("unable parse stream at character {}", o),
         }
     });
 }
 
-benchmark_group!(benches,
-                 basic_any, basic_skip, basic_do_try, basic_or, basic_and, basic_fmap,
-                 literal_delimited_string, literal_float
-                );
+benchmark_group!(
+    benches,
+    basic_any,
+    basic_skip,
+    basic_do_try,
+    basic_or,
+    basic_and,
+    basic_fmap,
+    literal_delimited_string,
+    literal_float
+);
 benchmark_main!(benches);

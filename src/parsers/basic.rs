@@ -102,11 +102,10 @@ pub trait SatisfyOperation<E, A>
 where
     E: Parser<A>,
 {
-    #[inline]
     fn satisfy<F: 'static>(self, f: F) -> Satisfy<E, A>
     where
         F: Fn(&A) -> bool;
-    #[inline]
+
     fn filter<F: 'static>(self, f: F) -> Satisfy<E, A>
     where
         F: Fn(&A) -> bool;
@@ -155,7 +154,7 @@ where
 
 impl<'a, A> Executable<'a, A> for Return<A>
 where
-    A: Copy,
+    A: Clone,
 {
     #[inline]
     fn execute(&self, _: &'a [u8], o: usize) -> Response<A> {
@@ -197,7 +196,7 @@ impl<'a> Executable<'a, u8> for Any {
             return response(Some(s[o]), o + 1, true);
         }
 
-        return response(None, o, false);
+        response(None, o, false)
     }
 }
 
@@ -208,7 +207,7 @@ impl<'a> Parsable<'a, u8> for Any {
             return response(Some(()), o + 1, true);
         }
 
-        return response(None, o, false);
+        response(None, o, false)
     }
 }
 
@@ -272,11 +271,11 @@ where
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Lookahead(p, _) = self;
-        let r = p.execute(s, o);
+        let result = p.execute(s, o);
 
-        match r.v {
-            Some(v) => response(Some(v), o, r.c),
-            _ => response(None, r.o, r.c),
+        match result.v {
+            Some(value) => response(Some(value), o, result.c),
+            _ => response(None, result.o, result.c),
         }
     }
 }
@@ -289,17 +288,17 @@ where
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
         let Satisfy(p, c) = self;
-        let r = p.execute(s, o);
+        let result = p.execute(s, o);
 
-        match r.v {
-            Some(a) => {
-                if (c)(&a) {
-                    response(Some(a), r.o, r.c)
+        match result.v {
+            Some(value) => {
+                if (c)(&value) {
+                    response(Some(value), result.o, result.c)
                 } else {
-                    response(None, r.o, r.c)
+                    response(None, result.o, result.c)
                 }
             }
-            _ => r,
+            _ => result,
         }
     }
 }
@@ -310,17 +309,17 @@ where
 {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
         let Satisfy(p, c) = self;
-        let r = p.execute(s, o);
+        let result = p.execute(s, o);
 
-        match r.v {
-            Some(a) => {
-                if (c)(&a) {
-                    response(Some(()), r.o, r.c)
+        match result.v {
+            Some(value) => {
+                if (c)(&value) {
+                    response(Some(()), result.o, result.c)
                 } else {
-                    response(None, r.o, r.c)
+                    response(None, result.o, result.c)
                 }
             }
-            _ => response(None, r.o, r.c),
+            _ => response(None, result.o, result.c),
         }
     }
 }
@@ -333,9 +332,9 @@ where
 {
     #[inline]
     fn execute(&self, s: &'a [u8], o: usize) -> Response<A> {
-        let Lazy(p, _) = self;
+        let Lazy(parser, _) = self;
 
-        p().execute(s, o)
+        parser().execute(s, o)
     }
 }
 
@@ -345,9 +344,9 @@ where
 {
     #[inline]
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let Lazy(p, _) = self;
+        let Lazy(parser, _) = self;
 
-        p().parse_only(s, o)
+        parser().parse_only(s, o)
     }
 }
 

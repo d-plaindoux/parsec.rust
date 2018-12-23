@@ -3,7 +3,7 @@ extern crate bencher;
 #[macro_use]
 extern crate parsecute;
 
-use bencher::{Bencher, black_box};
+use bencher::{black_box, Bencher};
 use parsecute::parsers::basic::*;
 use parsecute::parsers::core::*;
 use parsecute::parsers::data::*;
@@ -27,7 +27,10 @@ pub enum JsonValue<'a> {
 
 fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
     #[inline]
-    fn spaces<E, A>(p: E) -> FMap<And<Skip, (), E, A>, ((), A), A> where E: Parser<A> {
+    fn spaces<E, A>(p: E) -> FMap<And<Skip, (), E, A>, ((), A), A>
+    where
+        E: Parser<A>,
+    {
         seq!((skip(" \n\r\t".to_string())) ~> (p))
     }
 
@@ -37,8 +40,10 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
 
     #[inline]
     fn object<'a>() -> Parsec<'a, JsonValue<'a>> {
-        let attribute = || seq!((seq!((spaces(delimited_string())) <~ (spaces(':')))) ~ (json::<'a>()));
-        let attributes = seq!((attribute()) ~ (seq!((spaces(',')) ~> (attribute())).optrep())).opt();
+        let attribute =
+            || seq!((seq!((spaces(delimited_string())) <~ (spaces(':')))) ~ (json::<'a>()));
+        let attributes =
+            seq!((attribute()) ~ (seq!((spaces(',')) ~> (attribute())).optrep())).opt();
         let parser = seq!(('{') ~> (attributes) <~ (spaces('}'))).fmap(|v| {
             let mut r = HashMap::default();
             if let Some(((k, e), v)) = v {
@@ -55,7 +60,8 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
 
     #[inline]
     fn array<'a>() -> Parsec<'a, JsonValue<'a>> {
-        let elements = seq!((json::<'a>()) ~ (seq!((spaces(',')) ~> (json::<'a>())).optrep())).opt();
+        let elements =
+            seq!((json::<'a>()) ~ (seq!((spaces(',')) ~> (json::<'a>())).optrep())).opt();
         let parser = seq!(('[') ~> (elements) <~ (spaces(']'))).fmap(|v| {
             if let Some((e, v)) = v {
                 let mut r = v;
@@ -71,19 +77,15 @@ fn json_parser<'a>() -> Parsec<'a, JsonValue<'a>> {
 
     #[inline]
     fn json<'a>() -> Parsec<'a, JsonValue<'a>> {
-        let parser = lazy!(
-            spaces(lookahead(any()).bind(|c| {
-                match c as char {
-                    '{' => object::<'a>(),
-                    '[' => array::<'a>(),
-                    '"' => parsec!('a, delimited_string().fmap(|v| JsonValue::Str(to_str(v)))),
-                    'f' => parsec!('a, "false".fmap(|_| JsonValue::Boolean(false))),
-                    't' => parsec!('a, "true".fmap(|_| JsonValue::Boolean(true))),
-                    'n' => parsec!('a, "null".fmap(|_| JsonValue::Null())),
-                    _   => parsec!('a, float().fmap(|v| JsonValue::Num(v.to_f64()))),
-                }
-            }))
-        );
+        let parser = lazy!(spaces(lookahead(any()).bind(|c| match c as char {
+            '{' => object::<'a>(),
+            '[' => array::<'a>(),
+            '"' => parsec!('a, delimited_string().fmap(|v| JsonValue::Str(to_str(v)))),
+            'f' => parsec!('a, "false".fmap(|_| JsonValue::Boolean(false))),
+            't' => parsec!('a, "true".fmap(|_| JsonValue::Boolean(true))),
+            'n' => parsec!('a, "null".fmap(|_| JsonValue::Null())),
+            _ => parsec!('a, float().fmap(|v| JsonValue::Num(v.to_f64()))),
+        })));
 
         parsec!('a, parser)
     }
@@ -142,19 +144,31 @@ fn json_apache(b: &mut Bencher) {
 // Main parse function used for benchmarking
 // -------------------------------------------------------------------------------------------------
 
-fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8]) where E: Executable<'a, A> {
+fn parse<'a, E, A>(p: E, b: &mut Bencher, buffer: &'a [u8])
+where
+    E: Executable<'a, A>,
+{
     b.iter(|| {
         let buffer = black_box(buffer);
 
         match p.execute(buffer, 0) {
-            Response { v: Some(_), o: _, c: _ } => (),
+            Response {
+                v: Some(_),
+                o: _,
+                c: _,
+            } => (),
             Response { v: None, o, c: _ } => panic!("unable parse stream at character {}", o),
         }
     });
 }
 
-benchmark_group!(benches,
-                 json_basic, json_data, json_canada_pest, json_canada_nom, json_apache
-                 );
+benchmark_group!(
+    benches,
+    json_basic,
+    json_data,
+    json_canada_pest,
+    json_canada_nom,
+    json_apache
+);
 
 benchmark_main!(benches);

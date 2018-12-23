@@ -9,8 +9,12 @@ use parsecute::parsers::response::*;
 fn main() {
     let p = any().then(any()).fmap(|_| 1);
 
-    match p.execute(&"ab".as_bytes(), 0) {
-        Response { v: Some(1), o: 2, c: true } => println!("All done"),
+    match p.execute(b"ab", 0) {
+        Response {
+            v: Some(1),
+            o: 2,
+            c: true,
+        } => println!("All done"),
         _ => println!("Ouch"),
     }
 }

@@ -292,12 +292,12 @@ where
 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<Option<A>> {
         let Opt(p, _) = self;
-        let r = p.execute(s, o);
+        let result = p.execute(s, o);
 
-        match r.v {
-            Some(a) => response(Some(Some(a)), r.o, r.c),
-            None if r.c == false => response(Some(None), o, r.c),
-            None => response(None, o, r.c),
+        match result.v {
+            Some(value) => response(Some(Some(value)), result.o, result.c),
+            None if !result.c => response(Some(None), o, result.c),
+            None => response(None, o, result.c),
         }
     }
 }
@@ -308,12 +308,12 @@ where
 {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
         let Opt(p, _) = self;
-        let r = p.parse_only(s, o);
+        let result = p.parse_only(s, o);
 
-        match r.v {
-            Some(_) => response(Some(()), r.o, r.c),
-            None if r.c == false => response(Some(()), o, r.c),
-            None => response(None, o, r.c),
+        match result.v {
+            Some(_) => response(Some(()), result.o, result.c),
+            None if !result.c => response(Some(()), o, result.c),
+            None => response(None, o, result.c),
         }
     }
 }
@@ -327,21 +327,21 @@ where
     fn execute(&self, s: &'a [u8], o: usize) -> Response<Vec<A>> {
         let Repeat(opt, p, _) = self;
 
-        let mut result: Vec<A> = Vec::with_capacity(13);
+        let mut values: Vec<A> = Vec::with_capacity(13);
         let mut offset = o;
         let mut consumed = false;
 
         loop {
-            let r = p.execute(s, offset);
-            match r.v {
+            let result = p.execute(s, offset);
+            match result.v {
                 Some(a) => {
-                    result.push(a);
-                    offset = r.o;
-                    consumed = consumed || r.c;
+                    values.push(a);
+                    offset = result.o;
+                    consumed = consumed || result.c;
                 }
                 _ => {
                     if *opt || offset - o > 0 {
-                        return response(Some(result), offset, consumed);
+                        return response(Some(values), offset, consumed);
                     }
 
                     return response(None, offset, consumed);

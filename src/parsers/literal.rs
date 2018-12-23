@@ -44,7 +44,7 @@ pub fn letter() -> Or<Range<char>, Range<char>, char> {
     ('a'..'z').or('A'..'Z')
 }
 
-pub fn float<'a>() -> Float {
+pub fn float() -> Float {
     Float()
 }
 
@@ -52,7 +52,7 @@ pub fn delimited_string() -> DelimitedString {
     DelimitedString()
 }
 
-pub fn delimited_char<'a>() -> DelimitedChar {
+pub fn delimited_char() -> DelimitedChar {
     DelimitedChar()
 }
 
@@ -62,9 +62,9 @@ pub fn delimited_char<'a>() -> DelimitedChar {
 
 impl<'a> Executable<'a, u8> for u8 {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<u8> {
-        let r = any().execute(s, o);
-        match r.v {
-            Some(a) if { *self == a } => r,
+        let result = any().execute(s, o);
+        match result.v {
+            Some(value) if { *self == value } => result,
             _ => response(None, o, false),
         }
     }
@@ -72,9 +72,9 @@ impl<'a> Executable<'a, u8> for u8 {
 
 impl<'a> Parsable<'a, u8> for u8 {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let r = any().execute(s, o);
-        match r.v {
-            Some(a) if { *self == a } => response(Some(()), r.o, r.c),
+        let result = any().execute(s, o);
+        match result.v {
+            Some(value) if { *self == value } => response(Some(()), result.o, result.c),
             _ => response(None, o, false),
         }
     }
@@ -84,9 +84,9 @@ impl<'a> Parsable<'a, u8> for u8 {
 
 impl<'a> Executable<'a, char> for char {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<char> {
-        let r = any().execute(s, o); // TODO unicode to be managed here
-        match r.v {
-            Some(a) if { *self == a as char } => response(Some(a as char), r.o, r.c),
+        let result = any().execute(s, o); // TODO unicode to be managed here
+        match result.v {
+            Some(value) if { *self == value as char } => response(Some(value as char), result.o, result.c),
             _ => response(None, o, false),
         }
     }
@@ -94,9 +94,9 @@ impl<'a> Executable<'a, char> for char {
 
 impl<'a> Parsable<'a, char> for char {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let r = any().execute(s, o); // TODO unicode to be managed here
-        match r.v {
-            Some(a) if { *self == a as char } => response(Some(()), r.o, r.c),
+        let result = any().execute(s, o); // TODO unicode to be managed here
+        match result.v {
+            Some(value) if { *self == value as char } => response(Some(()), result.o, result.c),
             _ => response(None, o, false),
         }
     }
@@ -106,12 +106,12 @@ impl<'a> Parsable<'a, char> for char {
 
 impl<'a> Executable<'a, char> for Range<char> {
     fn execute(&self, s: &'a [u8], o: usize) -> Response<char> {
-        let r = any().execute(s, o); // TODO unicode to be managed here
-        match r.v {
-            Some(a) => {
-                let c = a as char;
+        let result = any().execute(s, o); // TODO unicode to be managed here
+        match result.v {
+            Some(value) => {
+                let c = value as char;
                 if c >= self.start && c <= self.end {
-                    response(Some(a as char), r.o, r.c)
+                    response(Some(value as char), result.o, result.c)
                 } else {
                     response(None, o, false)
                 }
@@ -123,12 +123,12 @@ impl<'a> Executable<'a, char> for Range<char> {
 
 impl<'a> Parsable<'a, char> for Range<char> {
     fn parse_only(&self, s: &'a [u8], o: usize) -> Response<()> {
-        let r = any().execute(s, o); // TODO unicode to be managed here
-        match r.v {
-            Some(a) => {
-                let c = a as char;
+        let result = any().execute(s, o); // TODO unicode to be managed here
+        match result.v {
+            Some(value) => {
+                let c = value as char;
                 if c >= self.start && c <= self.end {
-                    response(Some(()), r.o, r.c)
+                    response(Some(()), result.o, result.c)
                 } else {
                     response(None, o, false)
                 }
@@ -179,7 +179,7 @@ impl<'a> Parsable<'a, &'a str> for &'a str {
             }
         }
 
-        response(Some(()), o + self.len(), self.len() > 0)
+        response(Some(()), o + self.len(), !self.is_empty())
     }
 }
 
@@ -239,7 +239,7 @@ impl<'a> Executable<'a, char> for DelimitedChar {
             .then_right(
                 "\\\'"
                     .fmap(|_| '\'')
-                    .or(take_one(|c| *c != '\'' as u8).fmap(|a| a as char)),
+                    .or(take_one(|c| *c != b'\'').fmap(|a| a as char)),
             )
             .then_left('\'');
 
