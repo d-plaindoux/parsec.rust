@@ -3,6 +3,5 @@ rust:
 - stable
 script:
 - cargo build
-- cargo clippy
 - cargo test
 - cargo bench
