@@ -3,6 +3,10 @@
 [![Build Status](https://travis-ci.org/d-plaindoux/parsec.rust.svg?branch=master)](https://travis-ci.org/d-plaindoux/parsec.rust)
 [![unstable](http://badges.github.io/stability-badges/dist/stable.svg)](http://github.com/badges/stability-badges)
 
+# Status
+
+This library is no more maintained. Please see [Celma generalized parsec](https://github.com/d-plaindoux/celma) instead!
+
 # Objective 
 
 A [parser combinator library](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/parsec-paper-letter.pdf)
